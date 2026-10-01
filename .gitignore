@@ -55,3 +55,9 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# JetBrains Rider / IntelliJ internal configs
+.idea/
+
+# Rider user-specific solution settings
+*.sln.DotSettings.user
