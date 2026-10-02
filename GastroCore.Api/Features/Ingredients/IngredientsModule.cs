@@ -4,7 +4,7 @@ public static class IngredientsModule
 {
     public static IEndpointRouteBuilder MapIngredientsModule(this IEndpointRouteBuilder app)
     {
-        app.MapGroup("/")
+        app.MapGroup("/ingredients")
             .WithTags("Ingredients")
             .MapCreateIngredient()
             .MapGetIngredient()

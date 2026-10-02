@@ -77,7 +77,7 @@ public static class CreateIngredientEndpoint
 {
     public static IEndpointRouteBuilder MapCreateIngredient(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/ingredients", async (
+        app.MapPost("/", async (
                 CreateIngredientRequest request,
                 IMediator mediator,
                 ICurrentUserContext userContext,

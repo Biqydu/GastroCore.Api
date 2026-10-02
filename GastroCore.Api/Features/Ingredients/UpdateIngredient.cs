@@ -79,7 +79,7 @@ public static class UpdateIngredientEndpoint
 {
     public static IEndpointRouteBuilder MapUpdateIngredient(this IEndpointRouteBuilder app)
     {
-        app.MapPut("/ingredients/{id:guid}",
+        app.MapPut("/{id:guid}",
                 async (Guid id, UpdateIngredientRequest request, IMediator mediator, CancellationToken ct) =>
                 {
                     var command = new UpdateIngredientCommand(id, request.Name, request.StockQuantity, request.UnitCost,
