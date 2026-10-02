@@ -95,7 +95,8 @@ public static class UpdateIngredientEndpoint
                 nameof(UserRole.Manager)
             ))
             .Produces<UpdateIngredientResponse>()
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesValidationProblem();
 
         return app;
     }

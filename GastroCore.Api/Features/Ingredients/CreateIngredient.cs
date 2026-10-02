@@ -100,7 +100,8 @@ public static class CreateIngredientEndpoint
             .RequireAuthorization(policy => policy.RequireRole(
                 nameof(UserRole.Manager)
             ))
-            .Produces<CreateIngredientResponse>(StatusCodes.Status201Created);
+            .Produces<CreateIngredientResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem();
 
         return app;
     }
