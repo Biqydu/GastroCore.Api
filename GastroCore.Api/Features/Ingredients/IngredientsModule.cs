@@ -7,7 +7,8 @@ public static class IngredientsModule
         app.MapGroup("/")
             .WithTags("Ingredients")
             .MapCreateIngredient()
-            .MapGetIngredient();
+            .MapGetIngredient()
+            .MapUpdateIngredient();
 
         return app;
     }
