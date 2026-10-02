@@ -52,7 +52,7 @@ public static class GetIngredientEndpoint
 {
     public static IEndpointRouteBuilder MapGetIngredient(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/ingredients/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
+        app.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
             {
                 var result = await mediator.Send(new GetIngredientQuery(id), ct);
                 return result.ToOk();
