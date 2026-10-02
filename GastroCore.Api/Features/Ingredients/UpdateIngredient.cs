@@ -94,8 +94,8 @@ public static class UpdateIngredientEndpoint
             .RequireAuthorization(policy => policy.RequireRole(
                 nameof(UserRole.Manager)
             ))
-            .Produces<UpdateIngredientResponse>();
-        ;
+            .Produces<UpdateIngredientResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
