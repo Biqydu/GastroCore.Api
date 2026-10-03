@@ -7,7 +7,8 @@ public static class BrandsModule
         app.MapGroup("/brands")
             .WithTags("Brands")
             .MapCreateBrand()
-            .MapToggleBrandStatus();
+            .MapToggleBrandStatus()
+            .MapGetBrands();
 
         return app;
     }
