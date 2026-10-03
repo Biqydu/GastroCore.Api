@@ -17,8 +17,7 @@ public sealed record CreateIngredientCommand(
     string Name,
     decimal StockQuantity,
     decimal UnitCost,
-    decimal MinStockThreshold,
-    Guid CreatedBy
+    decimal MinStockThreshold
 ) : IRequest<CreateIngredientResponse>;
 
 public sealed record CreateIngredientResponse(
@@ -50,7 +49,7 @@ public sealed class CreateIngredientValidator : AbstractValidator<CreateIngredie
     }
 }
 
-public sealed class CreateIngredientHandler(AppDbContext db)
+public sealed class CreateIngredientHandler(AppDbContext db, ICurrentUserContext userContext)
     : IRequestHandler<CreateIngredientCommand, CreateIngredientResponse>
 {
     public async Task<CreateIngredientResponse> Handle(CreateIngredientCommand command, CancellationToken ct)
@@ -61,7 +60,7 @@ public sealed class CreateIngredientHandler(AppDbContext db)
             StockQuantity = command.StockQuantity,
             UnitCost = command.UnitCost,
             MinStockThreshold = command.MinStockThreshold,
-            CreatedBy = command.CreatedBy
+            CreatedBy = userContext.Id
         };
 
         db.Ingredients.Add(ingredient);
@@ -80,15 +79,13 @@ public static class CreateIngredientEndpoint
         app.MapPost("/", async (
                 CreateIngredientRequest request,
                 IMediator mediator,
-                ICurrentUserContext userContext,
                 CancellationToken ct) =>
             {
                 var command = new CreateIngredientCommand(
                     request.Name,
                     request.StockQuantity,
                     request.UnitCost,
-                    request.MinStockThreshold,
-                    userContext.Id
+                    request.MinStockThreshold
                 );
 
                 var response = await mediator.Send(command, ct);
