@@ -31,6 +31,8 @@ public sealed class GetIngredientsHandler(AppDbContext db, ICurrentUserContext u
         var ingredients = await db.Ingredients
             .AsNoTracking()
             .ApplyPagination(pageNumber, pageSize)
+            .OrderByDescending(i => i.StockQuantity)
+            .ThenByDescending(i => i.CreatedAt)
             .Select(i => new GetIngredientsDto(
                 i.Id,
                 i.Name,
