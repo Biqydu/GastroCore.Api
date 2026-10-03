@@ -8,6 +8,7 @@ public static class IngredientsModule
             .WithTags("Ingredients")
             .MapCreateIngredient()
             .MapGetIngredient()
+            .MapGetIngredients()
             .MapUpdateIngredient();
 
         return app;
