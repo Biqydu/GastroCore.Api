@@ -17,11 +17,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     IdentityUserToken<Guid>>(options)
 {
     public DbSet<Ingredient> Ingredients => Set<Ingredient>();
-    
+    public DbSet<Brand> Brands => Set<Brand>();
+
     protected override void OnModelCreating(ModelBuilder builder)
-    { 
+    {
         base.OnModelCreating(builder);
-        
+
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 
@@ -33,16 +34,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         foreach (var entry in entries)
         {
             if (entry is { State: EntityState.Added, Entity: ICreatedTimestamps createdEntity })
-            {
                 createdEntity.CreatedAt = now;
-            }
-            
+
             if (entry is { State: EntityState.Modified, Entity: IModifiedTimestamps modifiedEntity })
-            {
                 modifiedEntity.UpdatedAt = now;
-            }
         }
-        
+
         return base.SaveChangesAsync(ct);
     }
 }
