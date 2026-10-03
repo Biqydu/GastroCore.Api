@@ -10,5 +10,8 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Brand>
     {
         builder.Property(b => b.Name)
             .HasMaxLength(100);
+
+        builder.HasIndex(b => b.Name)
+            .IsUnique();
     }
 }
