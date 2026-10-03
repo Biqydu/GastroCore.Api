@@ -2,6 +2,7 @@ using FluentValidation;
 using GastroCore.Api.Behaviors;
 using GastroCore.Api.Data;
 using GastroCore.Api.Data.Entities;
+using GastroCore.Api.Features.Brands;
 using GastroCore.Api.Features.Ingredients;
 using GastroCore.Api.Services;
 using Microsoft.AspNetCore.Identity;
@@ -93,7 +94,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 var api = app.MapGroup("/api")
-    .MapIngredientsModule();
+    .MapIngredientsModule()
+    .MapBrandsModule();
 
 api.MapGroup("/auth")
     .MapIdentityApi<AppUser>();
