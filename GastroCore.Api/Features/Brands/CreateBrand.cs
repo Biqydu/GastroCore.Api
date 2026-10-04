@@ -64,7 +64,7 @@ public static class CreateBrandEndpoint
 
                     var result = await mediator.Send(command, ct);
 
-                    return result.ToCreated(value => $"/api/brands/{value.Id}"
+                    return result.ToCreated(response => $"/api/brands/{response.Id}"
                     );
                 })
             .WithName("CreateBrand")
