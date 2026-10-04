@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 {
     public DbSet<Ingredient> Ingredients => Set<Ingredient>();
     public DbSet<Brand> Brands => Set<Brand>();
+    public DbSet<Recipe> Recipes => Set<Recipe>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
