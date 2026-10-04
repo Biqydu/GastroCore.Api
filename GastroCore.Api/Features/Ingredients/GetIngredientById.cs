@@ -24,7 +24,7 @@ public sealed class GetIngredientHandler(AppDbContext db, ICurrentUserContext us
     {
         var isChefOnly = userContext.IsInRole(nameof(UserRole.Chef)) &&
                          !userContext.IsInRole(nameof(UserRole.Manager));
-        
+
         var ingredientResponse = await db.Ingredients
             .Where(i => i.Id == query.Id)
             .Select(i => new GetIngredientResponse(
@@ -34,27 +34,24 @@ public sealed class GetIngredientHandler(AppDbContext db, ICurrentUserContext us
                 isChefOnly ? null : i.UnitCost,
                 isChefOnly ? null : i.MinStockThreshold
             ))
-            .FirstOrDefaultAsync(ct); 
-        
+            .FirstOrDefaultAsync(ct);
+
         if (ingredientResponse is null)
-        {
             return Error.NotFound(
-                code: "Ingredient.NotFound",
-                description: $"Ingredient with ID {query.Id} was not found.");
-        }
+                "Ingredient.NotFound",
+                $"Ingredient with ID {query.Id} was not found.");
 
         return ingredientResponse;
     }
 }
 
-
 public static class GetIngredientEndpoint
 {
     public static IEndpointRouteBuilder MapGetIngredient(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
+        app.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
             {
-                var result = await mediator.Send(new GetIngredientQuery(id), ct);
+                var result = await sender.Send(new GetIngredientQuery(id), ct);
                 return result.ToOk();
             })
             .WithName("GetIngredientById")

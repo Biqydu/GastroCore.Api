@@ -86,7 +86,7 @@ public sealed class CreateRecipeHandler(AppDbContext db, ICurrentUserContext use
         var ingredientIds = command.Ingredients
             .Select(i => i.IngredientId)
             .ToImmutableArray();
-        
+
         var ingredientsFromDb = await db.Ingredients
             .Where(i => ingredientIds.Contains(i.Id))
             .Select(i => new { i.Id, i.UnitCost })
@@ -94,9 +94,9 @@ public sealed class CreateRecipeHandler(AppDbContext db, ICurrentUserContext use
 
         if (ingredientsFromDb.Length != ingredientIds.Length)
             return Error.Validation("Recipe.InvalidIngredients", "One or more provided ingredients do not exist.");
-        
+
         var ingredientCosts = ingredientsFromDb.ToDictionary(i => i.Id, i => i.UnitCost);
-        
+
         var calculatedBasePrice = command.Ingredients
             .Sum(i => i.AmountRequired * ingredientCosts[i.IngredientId]);
 
@@ -129,22 +129,22 @@ public static class CreateRecipeEndpoint
 {
     public static IEndpointRouteBuilder MapCreateRecipe(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/", async (CreateRecipeRequest request, IMediator mediator, CancellationToken ct) =>
-        {
-            var command = new CreateRecipeCommand(request.Name, request.BrandId, request.Ingredients);
+        app.MapPost("/", async (CreateRecipeRequest request, ISender sender, CancellationToken ct) =>
+            {
+                var command = new CreateRecipeCommand(request.Name, request.BrandId, request.Ingredients);
 
-            var result = await mediator.Send(command, ct);
+                var result = await sender.Send(command, ct);
 
-            return result.ToCreated(response => $"/api/recipes/{response.RecipeId}");
-        })
-        .WithName("CreateRecipe")
-        .WithSummary("Creates a new recipe with calculated base price.")
-        .RequireAuthorization(policy => policy.RequireRole(
-            nameof(UserRole.Manager)
-        ))
-        .Produces<CreateRecipeResponse>(StatusCodes.Status201Created)
-        .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesValidationProblem();
+                return result.ToCreated(response => $"/api/recipes/{response.RecipeId}");
+            })
+            .WithName("CreateRecipe")
+            .WithSummary("Creates a new recipe with calculated base price.")
+            .RequireAuthorization(policy => policy.RequireRole(
+                nameof(UserRole.Manager)
+            ))
+            .Produces<CreateRecipeResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesValidationProblem();
 
         return app;
     }

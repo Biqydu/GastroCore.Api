@@ -78,7 +78,7 @@ public static class CreateIngredientEndpoint
     {
         app.MapPost("/", async (
                 CreateIngredientRequest request,
-                IMediator mediator,
+                ISender sender,
                 CancellationToken ct) =>
             {
                 var command = new CreateIngredientCommand(
@@ -88,7 +88,7 @@ public static class CreateIngredientEndpoint
                     request.MinStockThreshold
                 );
 
-                var response = await mediator.Send(command, ct);
+                var response = await sender.Send(command, ct);
 
                 return Results.Created($"/api/ingredients/{response.Id}", response);
             })

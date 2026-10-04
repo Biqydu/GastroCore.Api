@@ -57,12 +57,12 @@ public static class CreateBrandEndpoint
     public static IEndpointRouteBuilder MapCreateBrand(this IEndpointRouteBuilder app)
     {
         app.MapPost("/",
-                async (CreateBrandRequest request, IMediator mediator,
+                async (CreateBrandRequest request, ISender sender,
                     CancellationToken ct) =>
                 {
                     var command = new CreateBrandCommand(request.Name);
 
-                    var result = await mediator.Send(command, ct);
+                    var result = await sender.Send(command, ct);
 
                     return result.ToCreated(response => $"/api/brands/{response.Id}"
                     );

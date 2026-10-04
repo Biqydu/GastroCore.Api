@@ -50,14 +50,14 @@ public static class GetBrandsEndpoint
     public static IEndpointRouteBuilder MapGetBrands(this IEndpointRouteBuilder app)
     {
         app.MapGet("/", async (
-                ISender mediator,
+                ISender sender,
                 CancellationToken ct,
                 int pageNumber = 1,
                 int pageSize = 10) =>
             {
                 var query = new GetBrandsQuery(pageNumber, pageSize);
 
-                var result = await mediator.Send(query, ct);
+                var result = await sender.Send(query, ct);
 
                 return Results.Ok(result);
             })

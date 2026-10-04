@@ -34,12 +34,12 @@ public static class ToggleBrandStatusEndpoint
     {
         app.MapPatch("/{id:guid}/toggle", async (
                 Guid id,
-                ISender mediator,
+                ISender sender,
                 CancellationToken ct) =>
             {
                 var command = new ToggleBrandStatusCommand(id);
 
-                var result = await mediator.Send(command, ct);
+                var result = await sender.Send(command, ct);
 
                 return result.ToNoContent();
             })

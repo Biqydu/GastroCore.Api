@@ -80,12 +80,12 @@ public static class UpdateIngredientEndpoint
     public static IEndpointRouteBuilder MapUpdateIngredient(this IEndpointRouteBuilder app)
     {
         app.MapPut("/{id:guid}",
-                async (Guid id, UpdateIngredientRequest request, IMediator mediator, CancellationToken ct) =>
+                async (Guid id, UpdateIngredientRequest request, ISender sender, CancellationToken ct) =>
                 {
                     var command = new UpdateIngredientCommand(id, request.Name, request.StockQuantity, request.UnitCost,
                         request.MinStockThreshold);
 
-                    var result = await mediator.Send(command, ct);
+                    var result = await sender.Send(command, ct);
 
                     return result.ToOk();
                 })
