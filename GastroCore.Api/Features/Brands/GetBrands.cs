@@ -28,7 +28,8 @@ public sealed class GetBrandsHandler(AppDbContext db, ICurrentUserContext userCo
         var totalRecords = await dbQuery.CountAsync(ct);
 
         var brands = await dbQuery
-            .OrderByDescending(b => b.CreatedAt)
+            .OrderByDescending(b => b.Recipes.Count)
+            .ThenByDescending(b => b.CreatedAt)
             .ThenByDescending(b => b.Id)
             .ApplyPagination(pageNumber, pageSize)
             .Select(b => new GetBrandsDto(b.Id, b.Name, isChefOnly ? null : b.IsActive))
