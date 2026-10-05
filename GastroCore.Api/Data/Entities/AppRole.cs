@@ -8,7 +8,7 @@ public sealed class AppRole : IdentityRole<Guid>
     {
         Id = Guid.CreateVersion7();
     }
-    
+
     public AppRole(string roleName) : base(roleName)
     {
         Id = Guid.CreateVersion7();

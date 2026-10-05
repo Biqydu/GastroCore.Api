@@ -42,7 +42,8 @@ public sealed class GetRecipeByIdHandler(AppDbContext db, ICurrentUserContext us
                 isChefOnly ? null : r.Brand.IsActive,
                 r.RecipeIngredients
                     .OrderBy(ri => ri.Ingredient.Name)
-                    .Select(ri => new RecipeIngredientDetailsDto(ri.IngredientId, ri.Ingredient.Name, ri.Ingredient.StockQuantity, ri.AmountRequired))
+                    .Select(ri => new RecipeIngredientDetailsDto(ri.IngredientId, ri.Ingredient.Name,
+                        ri.Ingredient.StockQuantity, ri.AmountRequired))
                     .ToList()))
             .FirstOrDefaultAsync(ct);
 
@@ -73,7 +74,7 @@ public static class GetRecipeByIdEndpoint
             ))
             .Produces<GetRecipeByIdResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
-        
+
         return app;
     }
 }

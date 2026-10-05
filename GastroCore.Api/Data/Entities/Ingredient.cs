@@ -4,11 +4,11 @@ namespace GastroCore.Api.Data.Entities;
 
 public sealed class Ingredient : BaseEntity, IModifiedTimestamps
 {
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-    public DateTimeOffset? UpdatedAt { get; set; }
     public required string Name { get; set; }
     public required decimal StockQuantity { get; set; }
-    public required decimal UnitCost {get; set;}
+    public required decimal UnitCost { get; set; }
     public required decimal MinStockThreshold { get; set; }
     public required Guid CreatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? UpdatedAt { get; set; }
 }

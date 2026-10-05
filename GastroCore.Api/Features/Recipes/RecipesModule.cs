@@ -9,7 +9,7 @@ public static class RecipesModule
             .MapCreateRecipe()
             .MapGetRecipes()
             .MapGetRecipeById();
-        
+
         return app;
     }
 }

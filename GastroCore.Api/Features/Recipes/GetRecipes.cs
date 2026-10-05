@@ -59,24 +59,25 @@ public static class GetRecipesEndpoint
     public static IEndpointRouteBuilder MapGetRecipes(this IEndpointRouteBuilder app)
     {
         app.MapGet("/", async (
-            ISender sender,
-            CancellationToken ct,
-            int pageNumber = 1,
-            int pageSize = 10) =>
-        {
-            var query = new GetRecipesQuery(pageNumber, pageSize);
+                ISender sender,
+                CancellationToken ct,
+                int pageNumber = 1,
+                int pageSize = 10) =>
+            {
+                var query = new GetRecipesQuery(pageNumber, pageSize);
 
-            var result = await sender.Send(query, ct);
+                var result = await sender.Send(query, ct);
 
-            return Results.Ok(result);
-        })
-        .WithName("GetRecipes")
-        .WithSummary("Gets recipes")
-        .RequireAuthorization(policy => policy.RequireRole(
-            nameof(UserRole.Chef),
-            nameof(UserRole.Manager)
-        ))
-        .Produces<PagedResponse<GetRecipesDto>>();;
+                return Results.Ok(result);
+            })
+            .WithName("GetRecipes")
+            .WithSummary("Gets recipes")
+            .RequireAuthorization(policy => policy.RequireRole(
+                nameof(UserRole.Chef),
+                nameof(UserRole.Manager)
+            ))
+            .Produces<PagedResponse<GetRecipesDto>>();
+        ;
 
         return app;
     }
