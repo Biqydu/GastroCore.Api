@@ -10,7 +10,7 @@ public sealed record GetRecipesQuery(int PageNumber, int PageSize) : IRequest<Pa
 
 public sealed record GetRecipesDto(
     Guid RecipeId,
-    string Name,
+    string RecipeName,
     Guid BrandId,
     string BrandName,
     decimal? BasePrice,
