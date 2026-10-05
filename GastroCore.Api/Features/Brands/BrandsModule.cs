@@ -8,7 +8,8 @@ public static class BrandsModule
             .WithTags("Brands")
             .MapCreateBrand()
             .MapToggleBrandStatus()
-            .MapGetBrands();
+            .MapGetBrands()
+            .MapGetBrandById();
 
         return app;
     }
