@@ -69,7 +69,6 @@ public static class GetBrandsEndpoint
                 nameof(UserRole.Manager)
             ))
             .Produces<PagedResponse<GetBrandsDto>>();
-        ;
 
         return app;
     }
