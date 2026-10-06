@@ -1,4 +1,4 @@
-namespace GastroCore.Api.Data;
+namespace GastroCore.Api.Data.Entities;
 
 public enum UserRole
 {

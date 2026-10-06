@@ -2,6 +2,7 @@ using ErrorOr;
 using ErrorOrAspNetCoreExtensions;
 using FluentValidation;
 using GastroCore.Api.Data;
+using GastroCore.Api.Data.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

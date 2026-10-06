@@ -1,6 +1,7 @@
 using ErrorOr;
 using ErrorOrAspNetCoreExtensions;
 using GastroCore.Api.Data;
+using GastroCore.Api.Data.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

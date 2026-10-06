@@ -1,5 +1,6 @@
 using GastroCore.Api.Common;
 using GastroCore.Api.Data;
+using GastroCore.Api.Data.Entities;
 using GastroCore.Api.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
