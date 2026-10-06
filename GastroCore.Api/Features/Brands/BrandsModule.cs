@@ -9,7 +9,8 @@ public static class BrandsModule
             .MapCreateBrand()
             .MapToggleBrandStatus()
             .MapGetBrands()
-            .MapGetBrandById();
+            .MapGetBrandById()
+            .MapUpdateBrand();
 
         return app;
     }
