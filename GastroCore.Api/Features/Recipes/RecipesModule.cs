@@ -10,6 +10,10 @@ public static class RecipesModule
             .MapGetRecipes()
             .MapGetRecipeById();
 
+        app.MapGroup("/brands")
+            .WithTags("Recipes")
+            .MapGetRecipesByBrand();
+
         return app;
     }
 }
