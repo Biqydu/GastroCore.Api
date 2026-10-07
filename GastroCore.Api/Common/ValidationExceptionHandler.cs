@@ -20,7 +20,7 @@ public sealed class ValidationExceptionHandler(IProblemDetailsService problemDet
             .GroupBy(x => x.PropertyName)
             .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
 
-        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        httpContext.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
 
         return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
@@ -28,7 +28,7 @@ public sealed class ValidationExceptionHandler(IProblemDetailsService problemDet
             Exception = exception,
             ProblemDetails = new ProblemDetails
             {
-                Status = StatusCodes.Status400BadRequest,
+                Status = StatusCodes.Status422UnprocessableEntity,
                 Title = "Validation Failed",
                 Detail = "One or more validation errors occurred.",
                 Instance = httpContext.Request.Path,
