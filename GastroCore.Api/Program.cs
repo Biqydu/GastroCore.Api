@@ -86,6 +86,7 @@ var api = app.MapGroup("/api")
     .MapRecipesModule();
 
 api.MapGroup("/auth")
+    .WithTags("Authentication")
     .MapIdentityApi<AppUser>();
 
 app.Run();
