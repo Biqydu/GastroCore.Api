@@ -1,9 +1,9 @@
-using System.Collections.Immutable;
 using ErrorOr;
 using ErrorOrAspNetCoreExtensions;
 using FluentValidation;
 using GastroCore.Api.Data;
 using GastroCore.Api.Data.Entities;
+using GastroCore.Api.Features.Recipes.Services;
 using GastroCore.Api.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -71,7 +71,10 @@ public sealed class RecipeIngredientDtoValidator : AbstractValidator<RecipeIngre
     }
 }
 
-public sealed class CreateRecipeHandler(AppDbContext db, ICurrentUserContext userContext)
+public sealed class CreateRecipeHandler(
+    AppDbContext db,
+    ICurrentUserContext userContext,
+    IRecipeCostCalculator costCalculator)
     : IRequestHandler<CreateRecipeCommand, ErrorOr<CreateRecipeResponse>>
 {
     public async Task<ErrorOr<CreateRecipeResponse>> Handle(CreateRecipeCommand command, CancellationToken ct)
@@ -83,28 +86,20 @@ public sealed class CreateRecipeHandler(AppDbContext db, ICurrentUserContext use
                 "Brand.NotFound",
                 $"Brand with ID '{command.BrandId}' was not found.");
 
-        var ingredientIds = command.Ingredients
-            .Select(i => i.IngredientId)
-            .ToImmutableArray();
+        var items = command.Ingredients
+            .Select(i => (i.IngredientId, i.AmountRequired))
+            .ToArray();
 
-        var ingredientsFromDb = await db.Ingredients
-            .Where(i => ingredientIds.Contains(i.Id))
-            .Select(i => new { i.Id, i.UnitCost })
-            .ToArrayAsync(ct);
+        var costResult = await costCalculator.CalculateBasePriceAsync(items, ct);
 
-        if (ingredientsFromDb.Length != ingredientIds.Length)
-            return Error.Validation("Recipe.InvalidIngredients", "One or more provided ingredients do not exist.");
-
-        var ingredientCosts = ingredientsFromDb.ToDictionary(i => i.Id, i => i.UnitCost);
-
-        var calculatedBasePrice = command.Ingredients
-            .Sum(i => i.AmountRequired * ingredientCosts[i.IngredientId]);
+        if (costResult.IsError)
+            return costResult.Errors;
 
         var recipe = new Recipe
         {
             Name = command.Name,
             BrandId = command.BrandId,
-            BasePrice = calculatedBasePrice,
+            BasePrice = costResult.Value,
             CreatedBy = userContext.Id,
             RecipeIngredients = command.Ingredients.Select(i => new RecipeIngredient
             {
