@@ -1,5 +1,6 @@
 using FluentValidation;
 using GastroCore.Api.Behaviors;
+using GastroCore.Api.Common;
 using GastroCore.Api.Data;
 using GastroCore.Api.Data.Entities;
 using GastroCore.Api.Features.Brands;
@@ -35,27 +36,12 @@ builder.Services.AddMediatR(cfg =>
 });
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
-builder.Services.AddProblemDetails(options =>
-{
-    options.CustomizeProblemDetails = ctx =>
-    {
-        if (ctx.Exception is not ValidationException valEx)
-            return;
-
-        ctx.ProblemDetails.Status = StatusCodes.Status400BadRequest;
-        ctx.ProblemDetails.Title = "Validation Failed";
-        ctx.ProblemDetails.Detail = "One or more validation errors occurred.";
-
-        var errors = valEx.Errors
-            .GroupBy(x => x.PropertyName)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
-
-        ctx.ProblemDetails.Extensions["errors"] = errors;
-    };
-});
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
