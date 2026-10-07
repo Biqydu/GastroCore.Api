@@ -8,7 +8,8 @@ public static class RecipesModule
             .WithTags("Recipes")
             .MapCreateRecipe()
             .MapGetRecipes()
-            .MapGetRecipeById();
+            .MapGetRecipeById()
+            .MapUpdateRecipe();
 
         app.MapGroup("/brands")
             .WithTags("Recipes")
