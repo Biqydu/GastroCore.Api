@@ -10,6 +10,8 @@ namespace GastroCore.Api.Features.Recipes;
 
 public sealed record GetRecipeByIdQuery(Guid Id) : IRequest<ErrorOr<GetRecipeByIdResponse>>;
 
+public sealed record GetRecipeByIdIngredientDetailsDto(Guid Id, string Name, decimal StockQuantity, decimal AmountRequired);
+
 public sealed record GetRecipeByIdResponse(
     Guid RecipeId,
     string RecipeName,
@@ -17,7 +19,7 @@ public sealed record GetRecipeByIdResponse(
     string BrandName,
     decimal? BasePrice,
     bool? IsActive,
-    IReadOnlyList<RecipeIngredientDetailsDto> Ingredients);
+    IReadOnlyList<GetRecipeByIdIngredientDetailsDto> Ingredients);
 
 public sealed class GetRecipeByIdHandler(AppDbContext db, ICurrentUserContext userContext)
     : IRequestHandler<GetRecipeByIdQuery, ErrorOr<GetRecipeByIdResponse>>
@@ -42,7 +44,7 @@ public sealed class GetRecipeByIdHandler(AppDbContext db, ICurrentUserContext us
                 isChefOnly ? null : r.Brand.IsActive,
                 r.RecipeIngredients
                     .OrderBy(ri => ri.Ingredient.Name)
-                    .Select(ri => new RecipeIngredientDetailsDto(ri.IngredientId, ri.Ingredient.Name,
+                    .Select(ri => new GetRecipeByIdIngredientDetailsDto(ri.IngredientId, ri.Ingredient.Name,
                         ri.Ingredient.StockQuantity, ri.AmountRequired))
                     .ToList()))
             .FirstOrDefaultAsync(ct);
