@@ -13,19 +13,20 @@ namespace GastroCore.Api.Features.Recipes;
 public sealed record CreateRecipeRequest(
     string Name,
     Guid BrandId,
-    IReadOnlyList<RecipeIngredientDto> Ingredients);
+    IReadOnlyList<CreateRecipeIngredientDto> Ingredients);
+public sealed record CreateRecipeIngredientDto(Guid Id, decimal AmountRequired);
 
 public sealed record CreateRecipeCommand(
     string Name,
     Guid BrandId,
-    IReadOnlyList<RecipeIngredientDto> Ingredients) : IRequest<ErrorOr<CreateRecipeResponse>>;
+    IReadOnlyList<CreateRecipeIngredientDto> Ingredients) : IRequest<ErrorOr<CreateRecipeResponse>>;
 
 public sealed record CreateRecipeResponse(
     Guid RecipeId,
     string Name,
     Guid BrandId,
     decimal BasePrice,
-    IReadOnlyList<RecipeIngredientDto> Ingredients);
+    IReadOnlyList<CreateRecipeIngredientDto> Ingredients);
 
 public sealed class CreateRecipeValidator : AbstractValidator<CreateRecipeCommand>
 {
@@ -47,23 +48,23 @@ public sealed class CreateRecipeValidator : AbstractValidator<CreateRecipeComman
             .SetValidator(new RecipeIngredientDtoValidator());
     }
 
-    private static bool HaveUniqueIngredients(IReadOnlyList<RecipeIngredientDto> ingredients)
+    private static bool HaveUniqueIngredients(IReadOnlyList<CreateRecipeIngredientDto> ingredients)
     {
         if (ingredients.Count == 0)
             return true;
 
         return ingredients
-            .Select(i => i.IngredientId)
+            .Select(i => i.Id)
             .Distinct()
             .Count() == ingredients.Count;
     }
 }
 
-public sealed class RecipeIngredientDtoValidator : AbstractValidator<RecipeIngredientDto>
+public sealed class RecipeIngredientDtoValidator : AbstractValidator<CreateRecipeIngredientDto>
 {
     public RecipeIngredientDtoValidator()
     {
-        RuleFor(i => i.IngredientId)
+        RuleFor(i => i.Id)
             .NotEmpty().WithMessage("IngredientId is required.");
 
         RuleFor(i => i.AmountRequired)
@@ -87,7 +88,7 @@ public sealed class CreateRecipeHandler(
                 $"Brand with ID '{command.BrandId}' was not found.");
 
         var items = command.Ingredients
-            .Select(i => (i.IngredientId, i.AmountRequired))
+            .Select(i => (i.Id, i.AmountRequired))
             .ToArray();
 
         var costResult = await costCalculator.CalculateBasePriceAsync(items, ct);
@@ -103,7 +104,7 @@ public sealed class CreateRecipeHandler(
             CreatedBy = userContext.Id,
             RecipeIngredients = command.Ingredients.Select(i => new RecipeIngredient
             {
-                IngredientId = i.IngredientId,
+                IngredientId = i.Id,
                 AmountRequired = i.AmountRequired
             }).ToList()
         };
