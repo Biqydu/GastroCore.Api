@@ -41,7 +41,7 @@ public sealed class UpdateRecipeValidator : AbstractValidator<UpdateRecipeComman
 
     private static bool HaveUniqueIngredients(IReadOnlyList<UpdateRecipeIngredientRequest> ingredients)
     {
-        if (ingredients is null || ingredients.Count == 0)
+        if (ingredients.Count == 0)
             return true;
 
         return ingredients.Select(i => i.Id)
