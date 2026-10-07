@@ -9,7 +9,7 @@ namespace GastroCore.Api.Features.Brands;
 
 public sealed record GetBrandsQuery(int PageNumber, int PageSize) : IRequest<PagedResponse<GetBrandsDto>>;
 
-public sealed record GetBrandsDto(Guid Id, string Name, bool? IsActive);
+public sealed record GetBrandsDto(Guid Id, string Name, bool? IsActive, int RecipesCount);
 
 public sealed class GetBrandsHandler(AppDbContext db, ICurrentUserContext userContext)
     : IRequestHandler<GetBrandsQuery, PagedResponse<GetBrandsDto>>
@@ -33,7 +33,7 @@ public sealed class GetBrandsHandler(AppDbContext db, ICurrentUserContext userCo
             .ThenByDescending(b => b.CreatedAt)
             .ThenByDescending(b => b.Id)
             .ApplyPagination(pageNumber, pageSize)
-            .Select(b => new GetBrandsDto(b.Id, b.Name, isChefOnly ? null : b.IsActive))
+            .Select(b => new GetBrandsDto(b.Id, b.Name, isChefOnly ? null : b.IsActive, b.Recipes.Count))
             .ToArrayAsync(ct);
 
         return new PagedResponse<GetBrandsDto>
