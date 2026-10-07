@@ -97,7 +97,7 @@ public static class UpdateIngredientEndpoint
             ))
             .Produces<UpdateIngredientResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesValidationProblem();
+            .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
         return app;
     }

@@ -144,7 +144,7 @@ public static class CreateRecipeEndpoint
             ))
             .Produces<CreateRecipeResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesValidationProblem();
+            .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
         return app;
     }

@@ -63,7 +63,7 @@ public static class UpdateBrandEndpoint
         ))
         .Produces<UpdateIngredientResponse>()
         .ProducesProblem(StatusCodes.Status404NotFound)
-        .ProducesValidationProblem();;
+        .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
         return app;
     }

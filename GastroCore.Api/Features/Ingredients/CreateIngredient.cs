@@ -98,7 +98,7 @@ public static class CreateIngredientEndpoint
                 nameof(UserRole.Manager)
             ))
             .Produces<CreateIngredientResponse>(StatusCodes.Status201Created)
-            .ProducesValidationProblem();
+            .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
         return app;
     }

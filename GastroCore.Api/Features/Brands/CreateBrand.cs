@@ -74,7 +74,7 @@ public static class CreateBrandEndpoint
             ))
             .Produces<CreateBrandResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status409Conflict)
-            .ProducesValidationProblem();
+            .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
         return app;
     }
