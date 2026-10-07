@@ -26,8 +26,7 @@ public sealed class GetIngredientsHandler(AppDbContext db, ICurrentUserContext u
 
         var totalRecords = await db.Ingredients.CountAsync(ct);
 
-        var isChefOnly = userContext.IsInRole(nameof(UserRole.Chef)) &&
-                         !userContext.IsInRole(nameof(UserRole.Manager));
+        var isChefOnly = userContext.IsChefOnly;
 
         var ingredients = await db.Ingredients
             .AsNoTracking()

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using GastroCore.Api.Data.Entities;
 
 namespace GastroCore.Api.Services;
 
@@ -21,8 +22,10 @@ public sealed class CurrentUserContext(IHttpContextAccessor httpContextAccessor)
 
     public bool IsAuthenticated => HttpContext?.User.Identity?.IsAuthenticated ?? false;
 
-    public bool IsInRole(string roleName)
+    public bool IsInRole(UserRole role)
     {
-        return HttpContext?.User.IsInRole(roleName) ?? false;
+        return HttpContext?.User.IsInRole(role.ToString()) ?? false;
     }
+
+    public bool IsChefOnly => IsInRole(UserRole.Chef) && !IsInRole(UserRole.Manager);
 }

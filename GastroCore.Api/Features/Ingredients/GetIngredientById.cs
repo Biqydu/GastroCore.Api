@@ -23,8 +23,7 @@ public sealed class GetIngredientHandler(AppDbContext db, ICurrentUserContext us
 {
     public async Task<ErrorOr<GetIngredientResponse>> Handle(GetIngredientQuery query, CancellationToken ct)
     {
-        var isChefOnly = userContext.IsInRole(nameof(UserRole.Chef)) &&
-                         !userContext.IsInRole(nameof(UserRole.Manager));
+        var isChefOnly = userContext.IsChefOnly;
 
         var ingredientResponse = await db.Ingredients
             .Where(i => i.Id == query.Id)

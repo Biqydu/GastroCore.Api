@@ -19,8 +19,7 @@ public sealed class GetBrandsHandler(AppDbContext db, ICurrentUserContext userCo
         var pageNumber = Math.Max(1, query.PageNumber);
         var pageSize = Math.Clamp(query.PageSize, 1, 50);
 
-        var isChefOnly = userContext.IsInRole(nameof(UserRole.Chef)) &&
-                         !userContext.IsInRole(nameof(UserRole.Manager));
+        var isChefOnly = userContext.IsChefOnly;
 
         var dbQuery = db.Brands.AsNoTracking();
 

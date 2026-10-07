@@ -23,8 +23,7 @@ public sealed class GetBrandByIdHandler(AppDbContext db, ICurrentUserContext use
 {
     public async Task<ErrorOr<GetBrandByIdResponse>> Handle(GetBrandByIdQuery query, CancellationToken ct)
     {
-        var isChefOnly = userContext.IsInRole(nameof(UserRole.Chef)) &&
-                         !userContext.IsInRole(nameof(UserRole.Manager));
+        var isChefOnly = userContext.IsChefOnly;
 
         var dbQuery = db.Brands
             .AsNoTracking()

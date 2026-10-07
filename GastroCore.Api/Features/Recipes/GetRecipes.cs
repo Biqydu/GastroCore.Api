@@ -26,9 +26,7 @@ public sealed class GetRecipesHandler(AppDbContext db, ICurrentUserContext userC
         var pageNumber = Math.Max(1, query.PageNumber);
         var pageSize = Math.Clamp(query.PageSize, 1, 50);
 
-        var isChefOnly = userContext.IsInRole(nameof(UserRole.Chef)) &&
-                         !userContext.IsInRole(nameof(UserRole.Manager));
-
+        var isChefOnly = userContext.IsChefOnly;
         var dbQuery = db.Recipes.AsNoTracking();
 
         if (isChefOnly) dbQuery = dbQuery.Where(r => r.Brand.IsActive);

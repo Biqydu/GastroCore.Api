@@ -24,8 +24,7 @@ public sealed class GetRecipeByIdHandler(AppDbContext db, ICurrentUserContext us
 {
     public async Task<ErrorOr<GetRecipeByIdResponse>> Handle(GetRecipeByIdQuery query, CancellationToken ct)
     {
-        var isChefOnly = userContext.IsInRole(nameof(UserRole.Chef)) &&
-                         !userContext.IsInRole(nameof(UserRole.Manager));
+        var isChefOnly = userContext.IsChefOnly;
 
         var dbQuery = db.Recipes
             .AsNoTracking()
