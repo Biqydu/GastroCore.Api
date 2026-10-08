@@ -90,5 +90,3 @@ api.MapGroup("/auth")
     .MapIdentityApi<AppUser>();
 
 app.Run();
-
-public partial class Program;
