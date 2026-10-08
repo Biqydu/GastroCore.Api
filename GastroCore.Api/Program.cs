@@ -6,7 +6,7 @@ using GastroCore.Api.Data.Entities;
 using GastroCore.Api.Features.Brands;
 using GastroCore.Api.Features.Ingredients;
 using GastroCore.Api.Features.Recipes;
-using GastroCore.Api.Features.Recipes.Services;
+using GastroCore.Api.Features.Recipes.Common;
 using GastroCore.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +17,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
-builder.Services.AddScoped<IRecipeCostCalculator, RecipeCostCalculator>();
 
 builder.Services.AddOpenApi();
 

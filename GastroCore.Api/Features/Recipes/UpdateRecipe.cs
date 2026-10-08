@@ -1,9 +1,10 @@
 using ErrorOr;
 using ErrorOrAspNetCoreExtensions;
 using FluentValidation;
+using GastroCore.Api.Common;
 using GastroCore.Api.Data;
 using GastroCore.Api.Data.Entities;
-using GastroCore.Api.Features.Recipes.Services;
+using GastroCore.Api.Features.Recipes.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,7 +63,7 @@ public sealed class UpdateRecipeIngredientRequestValidator : AbstractValidator<U
     }
 }
 
-public sealed class UpdateRecipeHandler(AppDbContext db, IRecipeCostCalculator costCalculator) 
+public sealed class UpdateRecipeHandler(AppDbContext db)
     : IRequestHandler<UpdateRecipeCommand, ErrorOr<UpdateRecipeResponse>>
 {
     public async Task<ErrorOr<UpdateRecipeResponse>> Handle(UpdateRecipeCommand command, CancellationToken ct)
@@ -80,7 +81,9 @@ public sealed class UpdateRecipeHandler(AppDbContext db, IRecipeCostCalculator c
             .Select(i => (i.Id, i.AmountRequired))
             .ToList();
 
-        var costResult = await costCalculator.CalculateBasePriceAsync(items, ct);
+        var unitCosts = await db.GetUnitCostsAsync(items.Select(i => i.Id), ct);
+
+        var costResult = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
 
         if (costResult.IsError)
             return costResult.Errors;
