@@ -1,4 +1,4 @@
 <Solution>
-    <Project Path="GastroCore.Api/GastroCore.Api.csproj" />
-    <Project Path="GastroCore.Tests/GastroCore.Tests.csproj" />
+    <Project Path="src/GastroCore.Api/GastroCore.Api.csproj" />
+    <Project Path="tests/GastroCore.Tests/GastroCore.Tests.csproj" />
 </Solution>
