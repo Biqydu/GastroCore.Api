@@ -1,8 +1,10 @@
 using ErrorOr;
 using ErrorOrAspNetCoreExtensions;
 using FluentValidation;
+using GastroCore.Api.Common;
 using GastroCore.Api.Data;
 using GastroCore.Api.Data.Entities;
+using GastroCore.Api.Features.Recipes.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,12 +59,45 @@ public sealed class UpdateIngredientHandler(AppDbContext db)
 {
     public async Task<ErrorOr<UpdateIngredientResponse>> Handle(UpdateIngredientCommand command, CancellationToken ct)
     {
-        var ingredient = await db.Ingredients.FirstOrDefaultAsync(i => i.Id == command.Id, ct);
+        var ingredient = await db.Ingredients
+            .FirstOrDefaultAsync(i => i.Id == command.Id, ct);
 
         if (ingredient is null)
             return Error.NotFound(
                 "Ingredient.NotFound",
                 $"Ingredient with ID {command.Id} was not found.");
+
+        if (ingredient.UnitCost != command.UnitCost)
+        {
+            var recipes = await db.Recipes
+                .Include(r => r.RecipeIngredients)
+                .Where(r => r.RecipeIngredients.Any(ri => ri.IngredientId == ingredient.Id))
+                .ToArrayAsync(ct);
+
+            if (recipes.Length > 0)
+            {
+                var ingredientIds = recipes
+                    .SelectMany(r => r.RecipeIngredients)
+                    .Select(ri => ri.IngredientId);
+
+                var unitCosts = await db.GetUnitCostsAsync(ingredientIds, ct);
+                
+                unitCosts[ingredient.Id] = command.UnitCost;
+                
+                foreach (var recipe in recipes)
+                {
+                    var items = recipe.RecipeIngredients
+                        .Select(ri => (ri.IngredientId, ri.AmountRequired));
+
+                    var costResult = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+
+                    if (costResult.IsError)
+                        return costResult.Errors;
+
+                    recipe.BasePrice = costResult.Value;
+                }
+            }
+        }
 
         ingredient.Name = command.Name;
         ingredient.StockQuantity = command.StockQuantity;
