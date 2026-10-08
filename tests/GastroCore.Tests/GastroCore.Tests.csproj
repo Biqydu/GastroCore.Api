@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\GastroCore.Api\GastroCore.Api.csproj"/>
+        <ProjectReference Include="..\..\src\GastroCore.Api\GastroCore.Api.csproj"/>
     </ItemGroup>
 
 </Project>
