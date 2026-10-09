@@ -10,7 +10,7 @@ public static class IngredientQueries
         IEnumerable<Guid> ingredientIds,
         CancellationToken ct = default)
     {
-        var ids = ingredientIds.Distinct().ToArray();
+        var ids = ingredientIds.Distinct().ToList();
 
         var rows = await db.Ingredients
             .Where(i => ids.Contains(i.Id))
