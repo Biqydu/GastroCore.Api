@@ -20,9 +20,9 @@ public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidat
         var failures = validationResults
             .SelectMany(r => r.Errors)
             .Where(f => f != null)
-            .ToList();
+            .ToArray();
 
-        if (failures.Count != 0) throw new ValidationException(failures);
+        if (failures.Length != 0) throw new ValidationException(failures);
 
         return await next(ct);
     }
