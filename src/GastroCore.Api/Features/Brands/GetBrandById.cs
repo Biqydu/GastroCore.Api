@@ -10,7 +10,7 @@ namespace GastroCore.Api.Features.Brands;
 
 public sealed record GetBrandByIdQuery(Guid Id) : IRequest<ErrorOr<GetBrandByIdResponse>>;
 
-public sealed record GetBrandByIdRecipeDto(Guid Id, string Name, decimal BasePrice);
+public sealed record GetBrandByIdRecipeDto(Guid Id, string Name, decimal IngredientsTotalPrice);
 
 public sealed record GetBrandByIdResponse(
     Guid Id,
@@ -38,7 +38,7 @@ public sealed class GetBrandByIdHandler(AppDbContext db, ICurrentUserContext use
                         .OrderByDescending(r => r.CreatedAt)
                         .ThenByDescending(r => r.Id)
                         .Take(10)
-                        .Select(r => new GetBrandByIdRecipeDto(r.Id, r.Name, r.BasePrice))
+                        .Select(r => new GetBrandByIdRecipeDto(r.Id, r.Name, r.IngredientsTotalPrice))
                         .ToList())
             )
             .FirstOrDefaultAsync(ct);

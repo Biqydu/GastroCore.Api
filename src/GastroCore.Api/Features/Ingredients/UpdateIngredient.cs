@@ -89,12 +89,12 @@ public sealed class UpdateIngredientHandler(AppDbContext db)
                     var items = recipe.RecipeIngredients
                         .Select(ri => (ri.IngredientId, ri.AmountRequired));
 
-                    var costResult = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+                    var costResult = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
                     if (costResult.IsError)
                         return costResult.Errors;
 
-                    recipe.BasePrice = costResult.Value;
+                    recipe.IngredientsTotalPrice = costResult.Value;
                 }
             }
         }

@@ -10,11 +10,11 @@ namespace GastroCore.Tests.Features.Ingredients;
 public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : IntegrationTestBase(factory)
 {
     [Fact]
-    public async Task Handle_UnitCostChanged_RecalculatesBasePriceOfRecipeUsingNewCost()
+    public async Task Handle_UnitCostChanged_RecalculatesIngredientsTotalPriceOfRecipeUsingNewCost()
     {
         var brand = Seed.CreateBrand();
         var flour = Seed.CreateIngredient(unitCost: 3m, name: "Flour");
-        var recipe = Seed.CreateRecipe(brand.Id, basePrice: 6m, items: (flour, 2m));
+        var recipe = Seed.CreateRecipe(brand.Id, ingredientsTotalPrice: 6m, items: (flour, 2m));
 
         await SeedAsync(brand, [flour], [recipe]);
 
@@ -25,7 +25,7 @@ public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : In
         result.IsError.ShouldBeFalse();
 
         var updated = await QueryDb(db => db.Recipes.SingleAsync(r => r.Id == recipe.Id));
-        updated.BasePrice.ShouldBe(10m); // 2 * 5
+        updated.IngredientsTotalPrice.ShouldBe(10m); // 2 * 5
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : In
         var flour = Seed.CreateIngredient(unitCost: 3m, name: "Flour");
         var sugar = Seed.CreateIngredient(unitCost: 5m, name: "Sugar");
         var recipe = Seed.CreateRecipe(
-            brand.Id, basePrice: 8.5m, items: [(flour, 2m), (sugar, 0.5m)]);
+            brand.Id, ingredientsTotalPrice: 8.5m, items: [(flour, 2m), (sugar, 0.5m)]);
 
         await SeedAsync(brand, [flour, sugar], [recipe]);
 
@@ -44,7 +44,7 @@ public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : In
             UnitCost: 4m, MinStockThreshold: 10));
 
         var updated = await QueryDb(db => db.Recipes.SingleAsync(r => r.Id == recipe.Id));
-        updated.BasePrice.ShouldBe(10.5m); // 2 * 4 + 0.5 * 5
+        updated.IngredientsTotalPrice.ShouldBe(10.5m); // 2 * 4 + 0.5 * 5
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : In
             UnitCost: 10m, MinStockThreshold: 10));
 
         var prices = await QueryDb(db => db.Recipes
-            .ToDictionaryAsync(r => r.Id, r => r.BasePrice));
+            .ToDictionaryAsync(r => r.Id, r => r.IngredientsTotalPrice));
 
         prices[bread.Id].ShouldBe(20m);
         prices[cake.Id].ShouldBe(50m);
@@ -83,7 +83,7 @@ public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : In
             UnitCost: 10m, MinStockThreshold: 10));
 
         var untouched = await QueryDb(db => db.Recipes.SingleAsync(r => r.Id == unrelated.Id));
-        untouched.BasePrice.ShouldBe(999m);
+        untouched.IngredientsTotalPrice.ShouldBe(999m);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : In
     {
         var brand = Seed.CreateBrand();
         var flour = Seed.CreateIngredient(unitCost: 3m, name: "Flour");
-        var recipe = Seed.CreateRecipe(brand.Id, basePrice: 999m, items: (flour, 2m));
+        var recipe = Seed.CreateRecipe(brand.Id, ingredientsTotalPrice: 999m, items: (flour, 2m));
 
         await SeedAsync(brand, [flour], [recipe]);
 
@@ -102,7 +102,7 @@ public sealed class UpdateIngredientHandlerTests(TestWebAppFactory factory) : In
         result.IsError.ShouldBeFalse();
 
         var untouched = await QueryDb(db => db.Recipes.SingleAsync(r => r.Id == recipe.Id));
-        untouched.BasePrice.ShouldBe(999m);
+        untouched.IngredientsTotalPrice.ShouldBe(999m);
     }
 
     [Fact]

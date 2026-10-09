@@ -17,7 +17,7 @@ public sealed record GetRecipeByIdResponse(
     string RecipeName,
     Guid BrandId,
     string BrandName,
-    decimal? BasePrice,
+    decimal? IngredientsTotalPrice,
     bool? IsActive,
     IReadOnlyList<GetRecipeByIdIngredientDetailsDto> Ingredients);
 
@@ -40,7 +40,7 @@ public sealed class GetRecipeByIdHandler(AppDbContext db, ICurrentUserContext us
                 r.Name,
                 r.BrandId,
                 r.Brand.Name,
-                isChefOnly ? null : r.BasePrice,
+                isChefOnly ? null : r.IngredientsTotalPrice,
                 isChefOnly ? null : r.Brand.IsActive,
                 r.RecipeIngredients
                     .OrderBy(ri => ri.Ingredient.Name)

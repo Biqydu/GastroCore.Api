@@ -14,7 +14,7 @@ public sealed record GetRecipesDto(
     string RecipeName,
     Guid BrandId,
     string BrandName,
-    decimal? BasePrice,
+    decimal? IngredientsTotalPrice,
     bool? IsActive);
 
 public sealed class GetRecipesHandler(AppDbContext db, ICurrentUserContext userContext)
@@ -38,7 +38,7 @@ public sealed class GetRecipesHandler(AppDbContext db, ICurrentUserContext userC
             .OrderByDescending(r => r.CreatedAt)
             .ThenByDescending(r => r.Id)
             .ApplyPagination(pageNumber, pageSize)
-            .Select(r => new GetRecipesDto(r.Id, r.Name, r.Brand.Id, r.Brand.Name, isChefOnly ? null : r.BasePrice,
+            .Select(r => new GetRecipesDto(r.Id, r.Name, r.Brand.Id, r.Brand.Name, isChefOnly ? null : r.IngredientsTotalPrice,
                 isChefOnly ? null : r.Brand.IsActive))
             .ToArrayAsync(ct);
 

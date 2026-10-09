@@ -20,11 +20,11 @@ public sealed class RecipeCostCalculatorTests
     };
 
     [Fact]
-    public void CalculateBasePrice_EmptyItems_ReturnsZero()
+    public void CalculateIngredientsTotalPrice_EmptyItems_ReturnsZero()
     {
         var items = Array.Empty<(Guid, decimal)>();
 
-        var result = RecipeCostCalculator.CalculateBasePrice(
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(
             items, ImmutableDictionary<Guid, decimal>.Empty);
 
         result.IsError.ShouldBeFalse();
@@ -32,19 +32,19 @@ public sealed class RecipeCostCalculatorTests
     }
 
     [Fact]
-    public void CalculateBasePrice_SingleItem_ReturnsAmountTimesUnitCost()
+    public void CalculateIngredientsTotalPrice_SingleItem_ReturnsAmountTimesUnitCost()
     {
         var items = new[] { (FlourId, 2.5m) };
         var unitCosts = new Dictionary<Guid, decimal> { [FlourId] = 4m };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(10m);
     }
 
     [Fact]
-    public void CalculateBasePrice_MultipleItems_ReturnsSumOfCosts()
+    public void CalculateIngredientsTotalPrice_MultipleItems_ReturnsSumOfCosts()
     {
         var items = new[]
         {
@@ -59,19 +59,19 @@ public sealed class RecipeCostCalculatorTests
             [EggId] = 0.75m
         };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(11.5m);
     }
 
     [Fact]
-    public void CalculateBasePrice_UnknownIngredient_ReturnsValidationError()
+    public void CalculateIngredientsTotalPrice_UnknownIngredient_ReturnsValidationError()
     {
         var items = new[] { (FlourId, 1m), (SugarId, 1m) };
         var unitCosts = new Dictionary<Guid, decimal> { [FlourId] = 3m };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeTrue();
         result.FirstError.Type.ShouldBe(ErrorType.Validation);
@@ -79,11 +79,11 @@ public sealed class RecipeCostCalculatorTests
     }
 
     [Fact]
-    public void CalculateBasePrice_EmptyUnitCosts_ReturnsValidationError()
+    public void CalculateIngredientsTotalPrice_EmptyUnitCosts_ReturnsValidationError()
     {
         var items = new[] { (FlourId, 1m) };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(
             items, ImmutableDictionary<Guid, decimal>.Empty);
 
         result.IsError.ShouldBeTrue();
@@ -91,7 +91,7 @@ public sealed class RecipeCostCalculatorTests
     }
 
     [Fact]
-    public void CalculateBasePrice_ZeroAmount_ContributesNothing()
+    public void CalculateIngredientsTotalPrice_ZeroAmount_ContributesNothing()
     {
         var items = new[] { (FlourId, 0m), (SugarId, 2m) };
         var unitCosts = new Dictionary<Guid, decimal>
@@ -100,14 +100,14 @@ public sealed class RecipeCostCalculatorTests
             [SugarId] = 5m
         };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(10m);
     }
 
     [Fact]
-    public void CalculateBasePrice_ZeroUnitCost_ContributesNothing()
+    public void CalculateIngredientsTotalPrice_ZeroUnitCost_ContributesNothing()
     {
         var items = new[] { (FlourId, 5m), (SugarId, 2m) };
         var unitCosts = new Dictionary<Guid, decimal>
@@ -116,26 +116,26 @@ public sealed class RecipeCostCalculatorTests
             [SugarId] = 5m
         };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(10m);
     }
 
     [Fact]
-    public void CalculateBasePrice_DuplicateIngredientIds_SumsEachOccurrence()
+    public void CalculateIngredientsTotalPrice_DuplicateIngredientIds_SumsEachOccurrence()
     {
         var items = new[] { (FlourId, 1m), (FlourId, 2m) };
         var unitCosts = new Dictionary<Guid, decimal> { [FlourId] = 3m };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(9m);
     }
 
     [Fact]
-    public void CalculateBasePrice_ExtraUnitCostsNotInItems_AreIgnored()
+    public void CalculateIngredientsTotalPrice_ExtraUnitCostsNotInItems_AreIgnored()
     {
         var items = new[] { (FlourId, 2m) };
         var unitCosts = new Dictionary<Guid, decimal>
@@ -144,19 +144,19 @@ public sealed class RecipeCostCalculatorTests
             [SugarId] = 999m
         };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(6m);
     }
 
     [Fact]
-    public void CalculateBasePrice_DecimalPrecision_IsPreserved()
+    public void CalculateIngredientsTotalPrice_DecimalPrecision_IsPreserved()
     {
         var items = new[] { (FlourId, 0.333m) };
         var unitCosts = new Dictionary<Guid, decimal> { [FlourId] = 1.5m };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(0.4995m);
@@ -164,13 +164,13 @@ public sealed class RecipeCostCalculatorTests
 
     [Theory]
     [MemberData(nameof(VariousInputs))]
-    public void CalculateBasePrice_VariousInputs_ReturnsExpectedTotal(
+    public void CalculateIngredientsTotalPrice_VariousInputs_ReturnsExpectedTotal(
         decimal amount, decimal unitCost, decimal expected)
     {
         var items = new[] { (FlourId, amount) };
         var unitCosts = new Dictionary<Guid, decimal> { [FlourId] = unitCost };
 
-        var result = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var result = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(expected);

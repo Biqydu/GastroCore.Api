@@ -9,7 +9,7 @@ namespace GastroCore.Tests.Features.Recipes;
 public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : IntegrationTestBase(factory)
 {
     [Fact]
-    public async Task Handle_ValidCommand_CreatesRecipeWithCalculatedBasePrice()
+    public async Task Handle_ValidCommand_CreatesRecipeWithCalculatedIngredientsTotalPrice()
     {
         var brand = Seed.CreateBrand();
         var flour = Seed.CreateIngredient(3m, "Flour");
@@ -33,7 +33,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         result.IsError.ShouldBeFalse();
         result.Value.Name.ShouldBe("Cake");
         result.Value.BrandId.ShouldBe(brand.Id);
-        result.Value.BasePrice.ShouldBe(8.5m);
+        result.Value.IngredientsTotalPrice.ShouldBe(8.5m);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
 
         saved.Name.ShouldBe("Bread");
         saved.BrandId.ShouldBe(brand.Id);
-        saved.BasePrice.ShouldBe(12m);
+        saved.IngredientsTotalPrice.ShouldBe(12m);
         saved.CreatedBy.ShouldBe(Factory.CurrentUser.Id);
         saved.RecipeIngredients.Count.ShouldBe(1);
         saved.RecipeIngredients.Single().IngredientId.ShouldBe(flour.Id);
@@ -121,7 +121,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
     }
 
     [Fact]
-    public async Task Handle_IngredientWithZeroUnitCost_ContributesNothingToBasePrice()
+    public async Task Handle_IngredientWithZeroUnitCost_ContributesNothingToIngredientsTotalPrice()
     {
         var brand = Seed.CreateBrand();
         var water = Seed.CreateIngredient(0m, "Water");
@@ -143,6 +143,6 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
             ]));
 
         result.IsError.ShouldBeFalse();
-        result.Value.BasePrice.ShouldBe(6m);
+        result.Value.IngredientsTotalPrice.ShouldBe(6m);
     }
 }

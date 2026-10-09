@@ -26,7 +26,7 @@ public sealed record CreateRecipeResponse(
     Guid RecipeId,
     string Name,
     Guid BrandId,
-    decimal BasePrice,
+    decimal IngredientsTotalPrice,
     IReadOnlyList<CreateRecipeIngredientDto> Ingredients);
 
 public sealed class CreateRecipeValidator : AbstractValidator<CreateRecipeCommand>
@@ -93,7 +93,7 @@ public sealed class CreateRecipeHandler(
 
         var unitCosts = await db.GetUnitCostsAsync(items.Select(i => i.Id), ct);
 
-        var costResult = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var costResult = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         if (costResult.IsError)
             return costResult.Errors;
@@ -102,7 +102,7 @@ public sealed class CreateRecipeHandler(
         {
             Name = command.Name,
             BrandId = command.BrandId,
-            BasePrice = costResult.Value,
+            IngredientsTotalPrice = costResult.Value,
             CreatedBy = userContext.Id,
             RecipeIngredients = command.Ingredients.Select(i => new RecipeIngredient
             {
@@ -118,7 +118,7 @@ public sealed class CreateRecipeHandler(
             recipe.Id,
             recipe.Name,
             recipe.BrandId,
-            recipe.BasePrice,
+            recipe.IngredientsTotalPrice,
             command.Ingredients);
     }
 }

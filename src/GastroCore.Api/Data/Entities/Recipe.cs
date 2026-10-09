@@ -7,7 +7,7 @@ public sealed class Recipe : BaseEntity, IModifiedTimestamps
     public required string Name { get; set; }
     public required Guid BrandId { get; set; }
     public Brand Brand { get; set; } = null!;
-    public required decimal BasePrice { get; set; }
+    public required decimal IngredientsTotalPrice { get; set; }
 
     public ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new HashSet<RecipeIngredient>();
 

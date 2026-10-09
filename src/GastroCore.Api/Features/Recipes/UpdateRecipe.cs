@@ -20,7 +20,7 @@ public sealed record UpdateRecipeResponse(
     Guid RecipeId,
     string Name,
     Guid BrandId,
-    decimal BasePrice,
+    decimal IngredientsTotalPrice,
     IReadOnlyList<UpdateRecipeIngredientRequest> Ingredients);
 
 public sealed class UpdateRecipeValidator : AbstractValidator<UpdateRecipeCommand>
@@ -83,13 +83,13 @@ public sealed class UpdateRecipeHandler(AppDbContext db)
 
         var unitCosts = await db.GetUnitCostsAsync(items.Select(i => i.Id), ct);
 
-        var costResult = RecipeCostCalculator.CalculateBasePrice(items, unitCosts);
+        var costResult = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
 
         if (costResult.IsError)
             return costResult.Errors;
 
         recipe.Name = command.Name;
-        recipe.BasePrice = costResult.Value;
+        recipe.IngredientsTotalPrice = costResult.Value;
 
         recipe.RecipeIngredients.Clear();
         foreach (var ingredientDto in command.Ingredients)
@@ -108,7 +108,7 @@ public sealed class UpdateRecipeHandler(AppDbContext db)
             recipe.Id,
             recipe.Name,
             recipe.BrandId,
-            recipe.BasePrice,
+            recipe.IngredientsTotalPrice,
             command.Ingredients);
     }
 }

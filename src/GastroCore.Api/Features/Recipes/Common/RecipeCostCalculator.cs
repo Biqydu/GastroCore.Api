@@ -4,7 +4,7 @@ namespace GastroCore.Api.Features.Recipes.Common;
 
 public static class RecipeCostCalculator
 {
-    public static ErrorOr<decimal> CalculateBasePrice(
+    public static ErrorOr<decimal> CalculateIngredientsTotalPrice(
         IEnumerable<(Guid IngredientId, decimal AmountRequired)> items,
         IReadOnlyDictionary<Guid, decimal> unitCosts)
     {
