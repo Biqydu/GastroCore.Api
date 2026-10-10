@@ -82,7 +82,7 @@ public sealed class PlaceOrderHandler(AppDbContext db)
                 r.IngredientsTotalPrice,
                 IsBrandActive = r.Brand.IsActive
             })
-            .ToListAsync(ct);
+            .ToArrayAsync(ct);
 
         var recipesById = recipes.ToDictionary(r => r.Id);
 
