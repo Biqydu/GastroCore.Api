@@ -93,7 +93,7 @@ public sealed class PlaceOrderHandler(AppDbContext db)
                     $"Recipe with ID {recipeId} was not found");
 
         if (recipes.Any(r => !r.IsBrandActive))
-            return Error.Validation(
+            return Error.Conflict(
                 "Order.InactiveBrand",
                 "Cannot place an order containing recipes from inactive brands.");
 
@@ -159,7 +159,7 @@ public static class PlaceOrderEndpoint
                     nameof(UserRole.Manager)
                 ))
             .Produces<PlaceOrderResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
