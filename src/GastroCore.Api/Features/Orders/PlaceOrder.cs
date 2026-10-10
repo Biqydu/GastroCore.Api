@@ -80,7 +80,14 @@ public sealed class PlaceOrderHandler(AppDbContext db)
             {
                 r.Id,
                 r.IngredientsTotalPrice,
-                IsBrandActive = r.Brand.IsActive
+                IsBrandActive = r.Brand.IsActive,
+                Ingredients = r.RecipeIngredients.Select(ri => new
+                {
+                    ri.IngredientId,
+                    ri.AmountRequired,
+                    ri.Ingredient.StockQuantity,
+                    ri.Ingredient.Name
+                }).ToList()
             })
             .ToArrayAsync(ct);
 
@@ -96,6 +103,36 @@ public sealed class PlaceOrderHandler(AppDbContext db)
             return Error.Conflict(
                 "Order.InactiveBrand",
                 "Cannot place an order containing recipes from inactive brands.");
+
+        var requiredIngredients = command.Items
+            .SelectMany(item =>
+                recipesById[item.RecipeId].Ingredients.Select(ingredient => new
+                {
+                    ingredient.IngredientId,
+                    ingredient.Name,
+                    ingredient.StockQuantity,
+                    RequiredQuantity = ingredient.AmountRequired * item.Quantity
+                }))
+            .GroupBy(i => new { i.IngredientId, i.Name })
+            .Select(group => new
+            {
+                group.Key.IngredientId,
+                group.Key.Name,
+                AvailableQuantity = group.First().StockQuantity,
+                RequiredQuantity = group.Sum(i => i.RequiredQuantity)
+            })
+            .ToArray();
+        
+        var insufficientIngredient = requiredIngredients
+            .FirstOrDefault(i => i.RequiredQuantity > i.AvailableQuantity);
+
+        if (insufficientIngredient is not null)
+            return Error.Conflict(
+                "Order.InsufficientStock",
+                $"""
+                 Insufficient stock for ingredient '{insufficientIngredient.Name}'. 
+                 Required: {insufficientIngredient.RequiredQuantity}, available: {insufficientIngredient.AvailableQuantity}.
+                 """);
 
         var totalPrice = command.Items.Sum(item =>
             recipesById[item.RecipeId].IngredientsTotalPrice * item.Quantity);
@@ -118,6 +155,29 @@ public sealed class PlaceOrderHandler(AppDbContext db)
                 Quantity = item.Quantity,
                 UnitPrice = recipe.IngredientsTotalPrice
             });
+        }
+        
+        var ingredientIds = requiredIngredients
+            .Select(i => i.IngredientId)
+            .ToArray();
+
+        var ingredients = await db.Ingredients
+            .Where(i => ingredientIds.AsEnumerable().Contains(i.Id))
+            .ToDictionaryAsync(i => i.Id, ct);
+
+        foreach (var required in requiredIngredients)
+        {
+            if (!ingredients.TryGetValue(required.IngredientId, out var ingredient))
+                return Error.NotFound(
+                    "Ingredient.NotFound",
+                    $"Ingredient with ID {required.IngredientId} was not found");
+
+            if (ingredient.StockQuantity < required.RequiredQuantity)
+                return Error.Conflict(
+                    "Order.InsufficientStock",
+                    $"Insufficient stock for ingredient '{ingredient.Name}'.");
+
+            ingredient.StockQuantity -= required.RequiredQuantity;
         }
 
         db.Orders.Add(order);
@@ -145,7 +205,6 @@ public static class PlaceOrderEndpoint
     {
         app.MapPost("/", async (PlaceOrderRequest request, ISender sender, CancellationToken ct) =>
             {
-                ;
                 var command = new PlaceOrderCommand(request.Source, request.ExternalOrderId, request.Items);
 
                 var result = await sender.Send(command, ct);
@@ -155,9 +214,9 @@ public static class PlaceOrderEndpoint
             .WithName("PlaceOrder")
             .WithSummary("Place an order")
             .RequireAuthorization(policy => policy.RequireRole(
-                    nameof(UserRole.Integration),
-                    nameof(UserRole.Manager)
-                ))
+                nameof(UserRole.Integration),
+                nameof(UserRole.Manager)
+            ))
             .Produces<PlaceOrderResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status404NotFound)
