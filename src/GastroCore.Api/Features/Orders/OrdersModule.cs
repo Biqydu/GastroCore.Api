@@ -5,7 +5,8 @@ public static class OrdersModule
     public static IEndpointRouteBuilder MapOrdersModule(this IEndpointRouteBuilder app)
     {
         app.MapGroup("/orders")
-            .WithTags("Orders");
+            .WithTags("Orders")
+            .MapPlaceOrder();
 
         return app;
     }
