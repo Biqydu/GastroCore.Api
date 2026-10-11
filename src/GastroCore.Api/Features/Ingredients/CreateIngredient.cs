@@ -6,69 +6,72 @@ using MediatR;
 
 namespace GastroCore.Api.Features.Ingredients;
 
-public sealed record CreateIngredientRequest(
-    string Name,
-    decimal StockQuantity,
-    decimal UnitCost,
-    decimal MinStockThreshold
-);
-
-public sealed record CreateIngredientCommand(
-    string Name,
-    decimal StockQuantity,
-    decimal UnitCost,
-    decimal MinStockThreshold
-) : IRequest<CreateIngredientResponse>;
-
-public sealed record CreateIngredientResponse(
-    Guid Id,
-    string Name,
-    decimal StockQuantity,
-    decimal UnitCost,
-    decimal MinStockThreshold);
-
-public sealed class CreateIngredientValidator : AbstractValidator<CreateIngredientCommand>
+public static class CreateIngredient
 {
-    public CreateIngredientValidator()
+    public sealed record Request(
+        string Name,
+        decimal StockQuantity,
+        decimal UnitCost,
+        decimal MinStockThreshold
+    );
+
+    public sealed record Command(
+        string Name,
+        decimal StockQuantity,
+        decimal UnitCost,
+        decimal MinStockThreshold
+    ) : IRequest<Response>;
+
+    public sealed record Response(
+        Guid Id,
+        string Name,
+        decimal StockQuantity,
+        decimal UnitCost,
+        decimal MinStockThreshold);
+
+    public sealed class Validator : AbstractValidator<Command>
     {
-        RuleFor(c => c.Name)
-            .NotEmpty().WithMessage("Name is required")
-            .MaximumLength(255).WithMessage("Name must not exceed 255 characters");
-
-        RuleFor(c => c.StockQuantity)
-            .NotEmpty().WithMessage("StockQuantity is required")
-            .GreaterThan(0).WithMessage("StockQuantity must be greater than 0");
-
-        RuleFor(c => c.UnitCost)
-            .NotEmpty().WithMessage("UnitCost is required")
-            .GreaterThan(0).WithMessage("UnitCost must be greater than 0");
-
-        RuleFor(c => c.MinStockThreshold)
-            .NotEmpty().WithMessage("MinStockThreshold is required")
-            .GreaterThanOrEqualTo(0).WithMessage("MinStockThreshold must be greater than or equal to 0");
-    }
-}
-
-public sealed class CreateIngredientHandler(AppDbContext db, ICurrentUserContext userContext)
-    : IRequestHandler<CreateIngredientCommand, CreateIngredientResponse>
-{
-    public async Task<CreateIngredientResponse> Handle(CreateIngredientCommand command, CancellationToken ct)
-    {
-        var ingredient = new Ingredient
+        public Validator()
         {
-            Name = command.Name,
-            StockQuantity = command.StockQuantity,
-            UnitCost = command.UnitCost,
-            MinStockThreshold = command.MinStockThreshold,
-            CreatedBy = userContext.Id
-        };
+            RuleFor(c => c.Name)
+                .NotEmpty().WithMessage("Name is required")
+                .MaximumLength(255).WithMessage("Name must not exceed 255 characters");
 
-        db.Ingredients.Add(ingredient);
+            RuleFor(c => c.StockQuantity)
+                .NotEmpty().WithMessage("StockQuantity is required")
+                .GreaterThan(0).WithMessage("StockQuantity must be greater than 0");
 
-        await db.SaveChangesAsync(ct);
+            RuleFor(c => c.UnitCost)
+                .NotEmpty().WithMessage("UnitCost is required")
+                .GreaterThan(0).WithMessage("UnitCost must be greater than 0");
 
-        return new CreateIngredientResponse(ingredient.Id, ingredient.Name, ingredient.StockQuantity,
-            ingredient.UnitCost, ingredient.MinStockThreshold);
+            RuleFor(c => c.MinStockThreshold)
+                .NotEmpty().WithMessage("MinStockThreshold is required")
+                .GreaterThanOrEqualTo(0).WithMessage("MinStockThreshold must be greater than or equal to 0");
+        }
+    }
+
+    public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
+        : IRequestHandler<Command, Response>
+    {
+        public async Task<Response> Handle(Command command, CancellationToken ct)
+        {
+            var ingredient = new Ingredient
+            {
+                Name = command.Name,
+                StockQuantity = command.StockQuantity,
+                UnitCost = command.UnitCost,
+                MinStockThreshold = command.MinStockThreshold,
+                CreatedBy = userContext.Id
+            };
+
+            db.Ingredients.Add(ingredient);
+
+            await db.SaveChangesAsync(ct);
+
+            return new Response(ingredient.Id, ingredient.Name, ingredient.StockQuantity,
+                ingredient.UnitCost, ingredient.MinStockThreshold);
+        }
     }
 }
 
@@ -77,11 +80,11 @@ public static class CreateIngredientEndpoint
     public static IEndpointRouteBuilder MapCreateIngredient(this IEndpointRouteBuilder app)
     {
         app.MapPost("/", async (
-                CreateIngredientRequest request,
+                CreateIngredient.Request request,
                 ISender sender,
                 CancellationToken ct) =>
             {
-                var command = new CreateIngredientCommand(
+                var command = new CreateIngredient.Command(
                     request.Name,
                     request.StockQuantity,
                     request.UnitCost,
@@ -97,7 +100,7 @@ public static class CreateIngredientEndpoint
             .RequireAuthorization(policy => policy.RequireRole(
                 nameof(UserRole.Manager)
             ))
-            .Produces<CreateIngredientResponse>(StatusCodes.Status201Created)
+            .Produces<CreateIngredient.Response>(StatusCodes.Status201Created)
             .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
         return app;

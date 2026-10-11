@@ -8,40 +8,43 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Ingredients;
 
-public sealed record GetIngredientQuery(Guid Id) : IRequest<ErrorOr<GetIngredientResponse>>;
-
-public sealed record GetIngredientResponse(
-    Guid Id,
-    string Name,
-    decimal StockQuantity,
-    decimal? UnitCost,
-    decimal? MinStockThreshold
-);
-
-public sealed class GetIngredientHandler(AppDbContext db, ICurrentUserContext userContext)
-    : IRequestHandler<GetIngredientQuery, ErrorOr<GetIngredientResponse>>
+public static class GetIngredientById
 {
-    public async Task<ErrorOr<GetIngredientResponse>> Handle(GetIngredientQuery query, CancellationToken ct)
+    public sealed record Query(Guid Id) : IRequest<ErrorOr<Response>>;
+
+    public sealed record Response(
+        Guid Id,
+        string Name,
+        decimal StockQuantity,
+        decimal? UnitCost,
+        decimal? MinStockThreshold
+    );
+
+    public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
+        : IRequestHandler<Query, ErrorOr<Response>>
     {
-        var isChefOnly = userContext.IsChefOnly;
+        public async Task<ErrorOr<Response>> Handle(Query query, CancellationToken ct)
+        {
+            var isChefOnly = userContext.IsChefOnly;
 
-        var ingredientResponse = await db.Ingredients
-            .Where(i => i.Id == query.Id)
-            .Select(i => new GetIngredientResponse(
-                i.Id,
-                i.Name,
-                i.StockQuantity,
-                isChefOnly ? null : i.UnitCost,
-                isChefOnly ? null : i.MinStockThreshold
-            ))
-            .FirstOrDefaultAsync(ct);
+            var ingredientResponse = await db.Ingredients
+                .Where(i => i.Id == query.Id)
+                .Select(i => new Response(
+                    i.Id,
+                    i.Name,
+                    i.StockQuantity,
+                    isChefOnly ? null : i.UnitCost,
+                    isChefOnly ? null : i.MinStockThreshold
+                ))
+                .FirstOrDefaultAsync(ct);
 
-        if (ingredientResponse is null)
-            return Error.NotFound(
-                "Ingredient.NotFound",
-                $"Ingredient with ID {query.Id} was not found.");
+            if (ingredientResponse is null)
+                return Error.NotFound(
+                    "Ingredient.NotFound",
+                    $"Ingredient with ID {query.Id} was not found.");
 
-        return ingredientResponse;
+            return ingredientResponse;
+        }
     }
 }
 
@@ -51,7 +54,7 @@ public static class GetIngredientEndpoint
     {
         app.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
             {
-                var result = await sender.Send(new GetIngredientQuery(id), ct);
+                var result = await sender.Send(new GetIngredientById.Query(id), ct);
                 return result.ToOk();
             })
             .WithName("GetIngredientById")
@@ -60,7 +63,7 @@ public static class GetIngredientEndpoint
                 nameof(UserRole.Chef),
                 nameof(UserRole.Manager)
             ))
-            .Produces<GetIngredientResponse>()
+            .Produces<GetIngredientById.Response>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;

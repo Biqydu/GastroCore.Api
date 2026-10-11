@@ -7,49 +7,52 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Ingredients;
 
-public sealed record GetIngredientsQuery(int PageNumber, int PageSize) : IRequest<PagedResponse<GetIngredientsDto>>;
-
-public sealed record GetIngredientsDto(
-    Guid Id,
-    string Name,
-    decimal StockQuantity,
-    decimal? UnitCost,
-    decimal? MinStockThreshold);
-
-public sealed class GetIngredientsHandler(AppDbContext db, ICurrentUserContext userContext)
-    : IRequestHandler<GetIngredientsQuery, PagedResponse<GetIngredientsDto>>
+public static class GetIngredients
 {
-    public async Task<PagedResponse<GetIngredientsDto>> Handle(GetIngredientsQuery query, CancellationToken ct)
+    public sealed record Query(int PageNumber, int PageSize) : IRequest<PagedResponse<IngredientDto>>;
+
+    public sealed record IngredientDto(
+        Guid Id,
+        string Name,
+        decimal StockQuantity,
+        decimal? UnitCost,
+        decimal? MinStockThreshold);
+
+    public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
+        : IRequestHandler<Query, PagedResponse<IngredientDto>>
     {
-        var pageNumber = Math.Max(1, query.PageNumber);
-        var pageSize = Math.Clamp(query.PageSize, 1, 50);
-
-        var totalRecords = await db.Ingredients.CountAsync(ct);
-
-        var isChefOnly = userContext.IsChefOnly;
-
-        var ingredients = await db.Ingredients
-            .AsNoTracking()
-            .OrderByDescending(i => i.StockQuantity)
-            .ThenByDescending(i => i.CreatedAt)
-            .ApplyPagination(pageNumber, pageSize)
-            .Select(i => new GetIngredientsDto(
-                i.Id,
-                i.Name,
-                i.StockQuantity,
-                isChefOnly ? null : i.UnitCost,
-                isChefOnly ? null : i.MinStockThreshold
-            ))
-            .ToArrayAsync(ct);
-
-        return new PagedResponse<GetIngredientsDto>
+        public async Task<PagedResponse<IngredientDto>> Handle(Query query, CancellationToken ct)
         {
-            Data = ingredients,
-            TotalRecords = totalRecords,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
-            TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize)
-        };
+            var pageNumber = Math.Max(1, query.PageNumber);
+            var pageSize = Math.Clamp(query.PageSize, 1, 50);
+
+            var totalRecords = await db.Ingredients.CountAsync(ct);
+
+            var isChefOnly = userContext.IsChefOnly;
+
+            var ingredients = await db.Ingredients
+                .AsNoTracking()
+                .OrderByDescending(i => i.StockQuantity)
+                .ThenByDescending(i => i.CreatedAt)
+                .ApplyPagination(pageNumber, pageSize)
+                .Select(i => new IngredientDto(
+                    i.Id,
+                    i.Name,
+                    i.StockQuantity,
+                    isChefOnly ? null : i.UnitCost,
+                    isChefOnly ? null : i.MinStockThreshold
+                ))
+                .ToArrayAsync(ct);
+
+            return new PagedResponse<IngredientDto>
+            {
+                Data = ingredients,
+                TotalRecords = totalRecords,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize)
+            };
+        }
     }
 }
 
@@ -63,7 +66,7 @@ public static class GetIngredientsEndpoint
                 int pageNumber = 1,
                 int pageSize = 10) =>
             {
-                var query = new GetIngredientsQuery(pageNumber, pageSize);
+                var query = new GetIngredients.Query(pageNumber, pageSize);
 
                 var result = await sender.Send(query, ct);
 
@@ -75,7 +78,7 @@ public static class GetIngredientsEndpoint
                 nameof(UserRole.Chef),
                 nameof(UserRole.Manager)
             ))
-            .Produces<PagedResponse<GetIngredientsDto>>();
+            .Produces<PagedResponse<GetIngredients.IngredientDto>>();
 
         return app;
     }
