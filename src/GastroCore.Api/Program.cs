@@ -25,7 +25,10 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.CreateSchemaReferenceId = typeInfo => SchemaIdGenerator.Create(typeInfo.Type);
+});
 
 var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 
