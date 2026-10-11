@@ -9,56 +9,59 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Recipes;
 
-public sealed record GetRecipesByBrandQuery(Guid BrandId, int PageNumber, int PageSize)
-    : IRequest<ErrorOr<PagedResponse<GetRecipesByBrandDto>>>;
-
-public sealed record GetRecipesByBrandDto(
-    Guid Id,
-    string Name,
-    decimal? IngredientsTotalPrice);
-
-public sealed class GetRecipesByBrandHandler(AppDbContext db, ICurrentUserContext userContext)
-    : IRequestHandler<GetRecipesByBrandQuery, ErrorOr<PagedResponse<GetRecipesByBrandDto>>>
+public static class GetRecipesByBrand
 {
-    public async Task<ErrorOr<PagedResponse<GetRecipesByBrandDto>>> Handle(GetRecipesByBrandQuery query,
-        CancellationToken ct)
+    public sealed record Query(Guid BrandId, int PageNumber, int PageSize)
+        : IRequest<ErrorOr<PagedResponse<Dto>>>;
+
+    public sealed record Dto(
+        Guid Id,
+        string Name,
+        decimal? IngredientsTotalPrice);
+
+    public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
+        : IRequestHandler<Query, ErrorOr<PagedResponse<Dto>>>
     {
-        var brandExists = await db.Brands
-            .AnyAsync(b => b.Id == query.BrandId, ct);
-
-        if (!brandExists)
-            return Error.NotFound(
-                "Brand.NotFound",
-                $"Brand with ID '{query.BrandId}' was not found.");
-
-        var pageNumber = Math.Max(1, query.PageNumber);
-        var pageSize = Math.Clamp(query.PageSize, 1, 50);
-
-        var isChefOnly = userContext.IsChefOnly;
-
-        var dbQuery = db.Recipes
-            .AsNoTracking()
-            .Where(r => r.BrandId == query.BrandId);
-
-        if (isChefOnly) dbQuery = dbQuery.Where(r => r.Brand.IsActive);
-
-        var totalRecords = await dbQuery.CountAsync(ct);
-
-        var recipes = await dbQuery
-            .OrderByDescending(r => r.CreatedAt)
-            .ThenByDescending(r => r.Id)
-            .ApplyPagination(pageNumber, pageSize)
-            .Select(r => new GetRecipesByBrandDto(r.Id, r.Name, isChefOnly ? null : r.IngredientsTotalPrice))
-            .ToArrayAsync(ct);
-
-        return new PagedResponse<GetRecipesByBrandDto>
+        public async Task<ErrorOr<PagedResponse<Dto>>> Handle(Query query,
+            CancellationToken ct)
         {
-            Data = recipes,
-            TotalRecords = totalRecords,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
-            TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize)
-        };
+            var brandExists = await db.Brands
+                .AnyAsync(b => b.Id == query.BrandId, ct);
+
+            if (!brandExists)
+                return Error.NotFound(
+                    "Brand.NotFound",
+                    $"Brand with ID '{query.BrandId}' was not found.");
+
+            var pageNumber = Math.Max(1, query.PageNumber);
+            var pageSize = Math.Clamp(query.PageSize, 1, 50);
+
+            var isChefOnly = userContext.IsChefOnly;
+
+            var dbQuery = db.Recipes
+                .AsNoTracking()
+                .Where(r => r.BrandId == query.BrandId);
+
+            if (isChefOnly) dbQuery = dbQuery.Where(r => r.Brand.IsActive);
+
+            var totalRecords = await dbQuery.CountAsync(ct);
+
+            var recipes = await dbQuery
+                .OrderByDescending(r => r.CreatedAt)
+                .ThenByDescending(r => r.Id)
+                .ApplyPagination(pageNumber, pageSize)
+                .Select(r => new Dto(r.Id, r.Name, isChefOnly ? null : r.IngredientsTotalPrice))
+                .ToArrayAsync(ct);
+
+            return new PagedResponse<Dto>
+            {
+                Data = recipes,
+                TotalRecords = totalRecords,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize)
+            };
+        }
     }
 }
 
@@ -67,23 +70,23 @@ public static class GetRecipesByBrandEndpoint
     public static IEndpointRouteBuilder MapGetRecipesByBrand(this IEndpointRouteBuilder app)
     {
         app.MapGet("/{brandId:guid}/recipes", async (Guid brandId, ISender sender, CancellationToken ct,
-            int pageNumber = 1,
-            int pageSize = 10) =>
-        {
-            var query = new GetRecipesByBrandQuery(brandId, pageNumber, pageSize);
+                int pageNumber = 1,
+                int pageSize = 10) =>
+            {
+                var query = new GetRecipesByBrand.Query(brandId, pageNumber, pageSize);
 
-            var result = await sender.Send(query, ct);
+                var result = await sender.Send(query, ct);
 
-            return result.ToOk();
-        })
-        .WithName("GetRecipesByBrand")
-        .WithSummary("Get recipes by brand")
-        .RequireAuthorization(policy => policy.RequireRole(
-            nameof(UserRole.Chef),
-            nameof(UserRole.Manager)
-        ))
-        .Produces<PagedResponse<GetRecipesByBrandDto>>()
-        .ProducesProblem(StatusCodes.Status404NotFound);
+                return result.ToOk();
+            })
+            .WithName("GetRecipesByBrand")
+            .WithSummary("Get recipes by brand")
+            .RequireAuthorization(policy => policy.RequireRole(
+                nameof(UserRole.Chef),
+                nameof(UserRole.Manager)
+            ))
+            .Produces<PagedResponse<GetRecipesByBrand.Dto>>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }

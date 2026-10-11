@@ -7,49 +7,53 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Recipes;
 
-public sealed record GetRecipesQuery(int PageNumber, int PageSize) : IRequest<PagedResponse<GetRecipesDto>>;
-
-public sealed record GetRecipesDto(
-    Guid RecipeId,
-    string RecipeName,
-    Guid BrandId,
-    string BrandName,
-    decimal? IngredientsTotalPrice,
-    bool? IsActive);
-
-public sealed class GetRecipesHandler(AppDbContext db, ICurrentUserContext userContext)
-    : IRequestHandler<GetRecipesQuery, PagedResponse<GetRecipesDto>>
+public static class GetRecipes
 {
-    public async Task<PagedResponse<GetRecipesDto>> Handle(GetRecipesQuery query,
-        CancellationToken ct)
+    public sealed record Query(int PageNumber, int PageSize) : IRequest<PagedResponse<Dto>>;
+
+    public sealed record Dto(
+        Guid RecipeId,
+        string RecipeName,
+        Guid BrandId,
+        string BrandName,
+        decimal? IngredientsTotalPrice,
+        bool? IsActive);
+
+    public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
+        : IRequestHandler<Query, PagedResponse<Dto>>
     {
-        var pageNumber = Math.Max(1, query.PageNumber);
-        var pageSize = Math.Clamp(query.PageSize, 1, 50);
-
-        var isChefOnly = userContext.IsChefOnly;
-        var dbQuery = db.Recipes.AsNoTracking();
-
-        if (isChefOnly) dbQuery = dbQuery.Where(r => r.Brand.IsActive);
-
-        var totalRecords = await dbQuery.CountAsync(ct);
-
-        var recipes = await dbQuery
-            .AsNoTracking()
-            .OrderByDescending(r => r.CreatedAt)
-            .ThenByDescending(r => r.Id)
-            .ApplyPagination(pageNumber, pageSize)
-            .Select(r => new GetRecipesDto(r.Id, r.Name, r.Brand.Id, r.Brand.Name, isChefOnly ? null : r.IngredientsTotalPrice,
-                isChefOnly ? null : r.Brand.IsActive))
-            .ToArrayAsync(ct);
-
-        return new PagedResponse<GetRecipesDto>
+        public async Task<PagedResponse<Dto>> Handle(Query query,
+            CancellationToken ct)
         {
-            Data = recipes,
-            TotalRecords = totalRecords,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
-            TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize)
-        };
+            var pageNumber = Math.Max(1, query.PageNumber);
+            var pageSize = Math.Clamp(query.PageSize, 1, 50);
+
+            var isChefOnly = userContext.IsChefOnly;
+            var dbQuery = db.Recipes.AsNoTracking();
+
+            if (isChefOnly) dbQuery = dbQuery.Where(r => r.Brand.IsActive);
+
+            var totalRecords = await dbQuery.CountAsync(ct);
+
+            var recipes = await dbQuery
+                .AsNoTracking()
+                .OrderByDescending(r => r.CreatedAt)
+                .ThenByDescending(r => r.Id)
+                .ApplyPagination(pageNumber, pageSize)
+                .Select(r => new Dto(r.Id, r.Name, r.Brand.Id, r.Brand.Name,
+                    isChefOnly ? null : r.IngredientsTotalPrice,
+                    isChefOnly ? null : r.Brand.IsActive))
+                .ToArrayAsync(ct);
+
+            return new PagedResponse<Dto>
+            {
+                Data = recipes,
+                TotalRecords = totalRecords,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize)
+            };
+        }
     }
 }
 
@@ -63,7 +67,7 @@ public static class GetRecipesEndpoint
                 int pageNumber = 1,
                 int pageSize = 10) =>
             {
-                var query = new GetRecipesQuery(pageNumber, pageSize);
+                var query = new GetRecipes.Query(pageNumber, pageSize);
 
                 var result = await sender.Send(query, ct);
 
@@ -75,8 +79,8 @@ public static class GetRecipesEndpoint
                 nameof(UserRole.Chef),
                 nameof(UserRole.Manager)
             ))
-            .Produces<PagedResponse<GetRecipesDto>>();
-        ;
+            .Produces<PagedResponse<GetRecipes.Dto>>();
+
 
         return app;
     }

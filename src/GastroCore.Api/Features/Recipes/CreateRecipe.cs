@@ -11,115 +11,119 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Recipes;
 
-public sealed record CreateRecipeRequest(
-    string Name,
-    Guid BrandId,
-    IReadOnlyList<CreateRecipeIngredientDto> Ingredients);
-public sealed record CreateRecipeIngredientDto(Guid Id, decimal AmountRequired);
-
-public sealed record CreateRecipeCommand(
-    string Name,
-    Guid BrandId,
-    IReadOnlyList<CreateRecipeIngredientDto> Ingredients) : IRequest<ErrorOr<CreateRecipeResponse>>;
-
-public sealed record CreateRecipeResponse(
-    Guid RecipeId,
-    string Name,
-    Guid BrandId,
-    decimal IngredientsTotalPrice,
-    IReadOnlyList<CreateRecipeIngredientDto> Ingredients);
-
-public sealed class CreateRecipeValidator : AbstractValidator<CreateRecipeCommand>
+public static class CreateRecipe
 {
-    public CreateRecipeValidator()
+    public sealed record Request(
+        string Name,
+        Guid BrandId,
+        IReadOnlyList<IngredientDto> Ingredients);
+
+    public sealed record IngredientDto(Guid Id, decimal AmountRequired);
+
+    public sealed record Command(
+        string Name,
+        Guid BrandId,
+        IReadOnlyList<IngredientDto> Ingredients) : IRequest<ErrorOr<Response>>;
+
+    public sealed record Response(
+        Guid RecipeId,
+        string Name,
+        Guid BrandId,
+        decimal IngredientsTotalPrice,
+        IReadOnlyList<IngredientDto> Ingredients);
+
+    public sealed class RecipeValidator : AbstractValidator<Command>
     {
-        RuleFor(r => r.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(500).WithMessage("Name must not exceed 500 characters.");
-
-        RuleFor(r => r.BrandId)
-            .NotEmpty().WithMessage("BrandId is required.");
-
-        RuleFor(r => r.Ingredients)
-            .NotNull().WithMessage("Ingredients collection cannot be null.")
-            .NotEmpty().WithMessage("Ingredients must contain at least one ingredient.")
-            .Must(HaveUniqueIngredients).WithMessage("Duplicate ingredients are not allowed in a single recipe.");
-
-        RuleForEach(r => r.Ingredients)
-            .SetValidator(new RecipeIngredientDtoValidator());
-    }
-
-    private static bool HaveUniqueIngredients(IReadOnlyList<CreateRecipeIngredientDto> ingredients)
-    {
-        if (ingredients.Count == 0)
-            return true;
-
-        return ingredients
-            .Select(i => i.Id)
-            .Distinct()
-            .Count() == ingredients.Count;
-    }
-}
-
-public sealed class RecipeIngredientDtoValidator : AbstractValidator<CreateRecipeIngredientDto>
-{
-    public RecipeIngredientDtoValidator()
-    {
-        RuleFor(i => i.Id)
-            .NotEmpty().WithMessage("IngredientId is required.");
-
-        RuleFor(i => i.AmountRequired)
-            .GreaterThan(0).WithMessage("AmountRequired must be greater than zero.");
-    }
-}
-
-public sealed class CreateRecipeHandler(
-    AppDbContext db,
-    ICurrentUserContext userContext)
-    : IRequestHandler<CreateRecipeCommand, ErrorOr<CreateRecipeResponse>>
-{
-    public async Task<ErrorOr<CreateRecipeResponse>> Handle(CreateRecipeCommand command, CancellationToken ct)
-    {
-        var brandExists = await db.Brands.AnyAsync(b => b.Id == command.BrandId, ct);
-
-        if (!brandExists)
-            return Error.NotFound(
-                "Brand.NotFound",
-                $"Brand with ID '{command.BrandId}' was not found.");
-
-        var items = command.Ingredients
-            .Select(i => (i.Id, i.AmountRequired))
-            .ToArray();
-
-        var unitCosts = await db.GetUnitCostsAsync(items.Select(i => i.Id), ct);
-
-        var costResult = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
-
-        if (costResult.IsError)
-            return costResult.Errors;
-
-        var recipe = new Recipe
+        public RecipeValidator()
         {
-            Name = command.Name,
-            BrandId = command.BrandId,
-            IngredientsTotalPrice = costResult.Value,
-            CreatedBy = userContext.Id,
-            RecipeIngredients = command.Ingredients.Select(i => new RecipeIngredient
+            RuleFor(r => r.Name)
+                .NotEmpty().WithMessage("Name is required.")
+                .MaximumLength(500).WithMessage("Name must not exceed 500 characters.");
+
+            RuleFor(r => r.BrandId)
+                .NotEmpty().WithMessage("BrandId is required.");
+
+            RuleFor(r => r.Ingredients)
+                .NotNull().WithMessage("Ingredients collection cannot be null.")
+                .NotEmpty().WithMessage("Ingredients must contain at least one ingredient.")
+                .Must(HaveUniqueIngredients).WithMessage("Duplicate ingredients are not allowed in a single recipe.");
+
+            RuleForEach(r => r.Ingredients)
+                .SetValidator(new IngredientValidator());
+        }
+
+        private static bool HaveUniqueIngredients(IReadOnlyList<IngredientDto> ingredients)
+        {
+            if (ingredients.Count == 0)
+                return true;
+
+            return ingredients
+                .Select(i => i.Id)
+                .Distinct()
+                .Count() == ingredients.Count;
+        }
+    }
+
+    public sealed class IngredientValidator : AbstractValidator<IngredientDto>
+    {
+        public IngredientValidator()
+        {
+            RuleFor(i => i.Id)
+                .NotEmpty().WithMessage("IngredientId is required.");
+
+            RuleFor(i => i.AmountRequired)
+                .GreaterThan(0).WithMessage("AmountRequired must be greater than zero.");
+        }
+    }
+
+    public sealed class CreateRecipeHandler(
+        AppDbContext db,
+        ICurrentUserContext userContext)
+        : IRequestHandler<Command, ErrorOr<Response>>
+    {
+        public async Task<ErrorOr<Response>> Handle(Command command, CancellationToken ct)
+        {
+            var brandExists = await db.Brands.AnyAsync(b => b.Id == command.BrandId, ct);
+
+            if (!brandExists)
+                return Error.NotFound(
+                    "Brand.NotFound",
+                    $"Brand with ID '{command.BrandId}' was not found.");
+
+            var items = command.Ingredients
+                .Select(i => (i.Id, i.AmountRequired))
+                .ToArray();
+
+            var unitCosts = await db.GetUnitCostsAsync(items.Select(i => i.Id), ct);
+
+            var costResult = RecipeCostCalculator.CalculateIngredientsTotalPrice(items, unitCosts);
+
+            if (costResult.IsError)
+                return costResult.Errors;
+
+            var recipe = new Recipe
             {
-                IngredientId = i.Id,
-                AmountRequired = i.AmountRequired
-            }).ToList()
-        };
+                Name = command.Name,
+                BrandId = command.BrandId,
+                IngredientsTotalPrice = costResult.Value,
+                CreatedBy = userContext.Id,
+                RecipeIngredients = command.Ingredients.Select(i => new RecipeIngredient
+                {
+                    IngredientId = i.Id,
+                    AmountRequired = i.AmountRequired
+                }).ToList()
+            };
 
-        db.Recipes.Add(recipe);
-        await db.SaveChangesAsync(ct);
+            db.Recipes.Add(recipe);
+            await db.SaveChangesAsync(ct);
 
-        return new CreateRecipeResponse(
-            recipe.Id,
-            recipe.Name,
-            recipe.BrandId,
-            recipe.IngredientsTotalPrice,
-            command.Ingredients);
+            return new Response(
+                recipe.Id,
+                recipe.Name,
+                recipe.BrandId,
+                recipe.IngredientsTotalPrice,
+                command.Ingredients);
+        }
     }
 }
 
@@ -127,9 +131,9 @@ public static class CreateRecipeEndpoint
 {
     public static IEndpointRouteBuilder MapCreateRecipe(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/", async (CreateRecipeRequest request, ISender sender, CancellationToken ct) =>
+        app.MapPost("/", async (CreateRecipe.Request request, ISender sender, CancellationToken ct) =>
             {
-                var command = new CreateRecipeCommand(request.Name, request.BrandId, request.Ingredients);
+                var command = new CreateRecipe.Command(request.Name, request.BrandId, request.Ingredients);
 
                 var result = await sender.Send(command, ct);
 
@@ -140,7 +144,7 @@ public static class CreateRecipeEndpoint
             .RequireAuthorization(policy => policy.RequireRole(
                 nameof(UserRole.Manager)
             ))
-            .Produces<CreateRecipeResponse>(StatusCodes.Status201Created)
+            .Produces<CreateRecipe.Response>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 

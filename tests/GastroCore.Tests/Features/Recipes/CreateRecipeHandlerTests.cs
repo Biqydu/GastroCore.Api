@@ -22,12 +22,12 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
             await db.SaveChangesAsync();
         });
 
-        var result = await Send(new CreateRecipeCommand(
+        var result = await Send(new CreateRecipe.Command(
             "Cake",
             brand.Id,
             [
-                new CreateRecipeIngredientDto(flour.Id, 2m), // 2 * 3 = 6
-                new CreateRecipeIngredientDto(sugar.Id, 0.5m) // 0.5 * 5 = 2.5
+                new CreateRecipe.IngredientDto(flour.Id, 2m), // 2 * 3 = 6
+                new CreateRecipe.IngredientDto(sugar.Id, 0.5m) // 0.5 * 5 = 2.5
             ]));
 
         result.IsError.ShouldBeFalse();
@@ -49,10 +49,10 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
             await db.SaveChangesAsync();
         });
 
-        var result = await Send(new CreateRecipeCommand(
+        var result = await Send(new CreateRecipe.Command(
             "Bread",
             brand.Id,
-            [new CreateRecipeIngredientDto(flour.Id, 4m)]));
+            [new CreateRecipe.IngredientDto(flour.Id, 4m)]));
 
         result.IsError.ShouldBeFalse();
 
@@ -80,10 +80,10 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
             await db.SaveChangesAsync();
         });
 
-        var result = await Send(new CreateRecipeCommand(
+        var result = await Send(new CreateRecipe.Command(
             "Ghost recipe",
             Guid.NewGuid(),
-            [new CreateRecipeIngredientDto(flour.Id, 1m)]));
+            [new CreateRecipe.IngredientDto(flour.Id, 1m)]));
 
         result.IsError.ShouldBeTrue();
         result.FirstError.Type.ShouldBe(ErrorType.NotFound);
@@ -105,12 +105,12 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
             await db.SaveChangesAsync();
         });
 
-        var result = await Send(new CreateRecipeCommand(
+        var result = await Send(new CreateRecipe.Command(
             "Broken recipe",
             brand.Id,
             [
-                new CreateRecipeIngredientDto(flour.Id, 1m),
-                new CreateRecipeIngredientDto(Guid.NewGuid(), 1m) // nie istnieje
+                new CreateRecipe.IngredientDto(flour.Id, 1m),
+                new CreateRecipe.IngredientDto(Guid.NewGuid(), 1m) // nie istnieje
             ]));
 
         result.IsError.ShouldBeTrue();
@@ -134,12 +134,12 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
             await db.SaveChangesAsync();
         });
 
-        var result = await Send(new CreateRecipeCommand(
+        var result = await Send(new CreateRecipe.Command(
             "Dough",
             brand.Id,
             [
-                new CreateRecipeIngredientDto(water.Id, 10m),
-                new CreateRecipeIngredientDto(flour.Id, 2m)
+                new CreateRecipe.IngredientDto(water.Id, 10m),
+                new CreateRecipe.IngredientDto(flour.Id, 2m)
             ]));
 
         result.IsError.ShouldBeFalse();
