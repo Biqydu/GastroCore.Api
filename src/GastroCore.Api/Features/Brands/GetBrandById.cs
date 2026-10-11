@@ -8,47 +8,50 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Brands;
 
-public sealed record GetBrandByIdQuery(Guid Id) : IRequest<ErrorOr<GetBrandByIdResponse>>;
-
-public sealed record GetBrandByIdRecipeDto(Guid Id, string Name, decimal IngredientsTotalPrice);
-
-public sealed record GetBrandByIdResponse(
-    Guid Id,
-    string Name,
-    bool? IsActive,
-    IReadOnlyList<GetBrandByIdRecipeDto> LatestRecipes);
-
-public sealed class GetBrandByIdHandler(AppDbContext db, ICurrentUserContext userContext)
-    : IRequestHandler<GetBrandByIdQuery, ErrorOr<GetBrandByIdResponse>>
+public static class GetBrandById
 {
-    public async Task<ErrorOr<GetBrandByIdResponse>> Handle(GetBrandByIdQuery query, CancellationToken ct)
+    public sealed record Query(Guid Id) : IRequest<ErrorOr<Response>>;
+
+    public sealed record RecipeDto(Guid Id, string Name, decimal IngredientsTotalPrice);
+
+    public sealed record Response(
+        Guid Id,
+        string Name,
+        bool? IsActive,
+        IReadOnlyList<RecipeDto> LatestRecipes);
+
+    public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
+        : IRequestHandler<Query, ErrorOr<Response>>
     {
-        var isChefOnly = userContext.IsChefOnly;
+        public async Task<ErrorOr<Response>> Handle(Query query, CancellationToken ct)
+        {
+            var isChefOnly = userContext.IsChefOnly;
 
-        var dbQuery = db.Brands
-            .AsNoTracking()
-            .Where(b => b.Id == query.Id);
+            var dbQuery = db.Brands
+                .AsNoTracking()
+                .Where(b => b.Id == query.Id);
 
-        if (isChefOnly) dbQuery = dbQuery.Where(b => b.IsActive);
+            if (isChefOnly) dbQuery = dbQuery.Where(b => b.IsActive);
 
-        var brand = await dbQuery
-            .Select(b =>
-                new GetBrandByIdResponse(b.Id, b.Name, isChefOnly ? null : b.IsActive,
-                    b.Recipes
-                        .OrderByDescending(r => r.CreatedAt)
-                        .ThenByDescending(r => r.Id)
-                        .Take(10)
-                        .Select(r => new GetBrandByIdRecipeDto(r.Id, r.Name, r.IngredientsTotalPrice))
-                        .ToList())
-            )
-            .FirstOrDefaultAsync(ct);
+            var brand = await dbQuery
+                .Select(b =>
+                    new Response(b.Id, b.Name, isChefOnly ? null : b.IsActive,
+                        b.Recipes
+                            .OrderByDescending(r => r.CreatedAt)
+                            .ThenByDescending(r => r.Id)
+                            .Take(10)
+                            .Select(r => new RecipeDto(r.Id, r.Name, r.IngredientsTotalPrice))
+                            .ToList())
+                )
+                .FirstOrDefaultAsync(ct);
 
-        if (brand is null)
-            return Error.NotFound(
-                "Brand.NotFound",
-                $"Brand with ID '{query.Id}' was not found.");
+            if (brand is null)
+                return Error.NotFound(
+                    "Brand.NotFound",
+                    $"Brand with ID '{query.Id}' was not found.");
 
-        return brand;
+            return brand;
+        }
     }
 }
 
@@ -58,7 +61,7 @@ public static class GetBrandByIdEndpoint
     {
         app.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
             {
-                var query = new GetBrandByIdQuery(id);
+                var query = new GetBrandById.Query(id);
 
                 var result = await sender.Send(query, ct);
 
@@ -70,8 +73,7 @@ public static class GetBrandByIdEndpoint
                 nameof(UserRole.Chef),
                 nameof(UserRole.Manager)
             ))
-            .Produces<GetBrandByIdResponse>();
-        ;
+            .Produces<GetBrandById.Response>();
 
         return app;
     }

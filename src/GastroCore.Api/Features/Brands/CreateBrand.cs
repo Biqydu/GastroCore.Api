@@ -9,46 +9,49 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Brands;
 
-public sealed record CreateBrandRequest(string Name);
-
-public sealed record CreateBrandCommand(string Name) : IRequest<ErrorOr<CreateBrandResponse>>;
-
-public sealed record CreateBrandResponse(Guid Id, string Name, bool IsActive);
-
-public sealed class CreateBrandValidator : AbstractValidator<CreateBrandCommand>
+public static class CreateBrand
 {
-    public CreateBrandValidator()
+    public sealed record Request(string Name);
+
+    public sealed record Command(string Name) : IRequest<ErrorOr<Response>>;
+
+    public sealed record Response(Guid Id, string Name, bool IsActive);
+
+    public sealed class Validator : AbstractValidator<Command>
     {
-        RuleFor(c => c.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(100).WithMessage("Name must not exceed 100 characters.");
-    }
-}
-
-public sealed class CreateBrandHandler(AppDbContext db, ICurrentUserContext userContext)
-    : IRequestHandler<CreateBrandCommand, ErrorOr<CreateBrandResponse>>
-{
-    public async Task<ErrorOr<CreateBrandResponse>> Handle(CreateBrandCommand command, CancellationToken ct)
-    {
-        var brandExists = await db.Brands
-            .AnyAsync(b => EF.Functions.ILike(b.Name, command.Name.Trim()), ct);
-
-        if (brandExists)
-            return Error.Conflict(
-                "Brand.AlreadyExists",
-                $"Brand with name '{command.Name}' already exists.");
-
-        var brand = new Brand
+        public Validator()
         {
-            Name = command.Name,
-            CreatedBy = userContext.Id
-        };
+            RuleFor(c => c.Name)
+                .NotEmpty().WithMessage("Name is required.")
+                .MaximumLength(100).WithMessage("Name must not exceed 100 characters.");
+        }
+    }
 
-        db.Brands.Add(brand);
+    public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
+        : IRequestHandler<Command, ErrorOr<Response>>
+    {
+        public async Task<ErrorOr<Response>> Handle(Command command, CancellationToken ct)
+        {
+            var brandExists = await db.Brands
+                .AnyAsync(b => EF.Functions.ILike(b.Name, command.Name.Trim()), ct);
 
-        await db.SaveChangesAsync(ct);
+            if (brandExists)
+                return Error.Conflict(
+                    "Brand.AlreadyExists",
+                    $"Brand with name '{command.Name}' already exists.");
 
-        return new CreateBrandResponse(brand.Id, brand.Name, brand.IsActive);
+            var brand = new Brand
+            {
+                Name = command.Name,
+                CreatedBy = userContext.Id
+            };
+
+            db.Brands.Add(brand);
+
+            await db.SaveChangesAsync(ct);
+
+            return new Response(brand.Id, brand.Name, brand.IsActive);
+        }
     }
 }
 
@@ -57,10 +60,10 @@ public static class CreateBrandEndpoint
     public static IEndpointRouteBuilder MapCreateBrand(this IEndpointRouteBuilder app)
     {
         app.MapPost("/",
-                async (CreateBrandRequest request, ISender sender,
+                async (CreateBrand.Request request, ISender sender,
                     CancellationToken ct) =>
                 {
-                    var command = new CreateBrandCommand(request.Name);
+                    var command = new CreateBrand.Command(request.Name);
 
                     var result = await sender.Send(command, ct);
 
@@ -72,7 +75,7 @@ public static class CreateBrandEndpoint
             .RequireAuthorization(policy => policy.RequireRole(
                 nameof(UserRole.Manager)
             ))
-            .Produces<CreateBrandResponse>(StatusCodes.Status201Created)
+            .Produces<CreateBrand.Response>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 

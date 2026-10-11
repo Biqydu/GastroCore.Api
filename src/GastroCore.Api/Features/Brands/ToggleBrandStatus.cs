@@ -7,25 +7,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GastroCore.Api.Features.Brands;
 
-public sealed record ToggleBrandStatusCommand(Guid Id) : IRequest<ErrorOr<Success>>;
-
-public sealed class ToggleBrandStatusHandler(AppDbContext db)
-    : IRequestHandler<ToggleBrandStatusCommand, ErrorOr<Success>>
+public static class ToggleBrandStatus
 {
-    public async Task<ErrorOr<Success>> Handle(ToggleBrandStatusCommand command, CancellationToken ct)
+    public sealed record Command(Guid Id) : IRequest<ErrorOr<Success>>;
+
+    public sealed class Handler(AppDbContext db)
+        : IRequestHandler<Command, ErrorOr<Success>>
     {
-        var brand = await db.Brands.FirstOrDefaultAsync(b => b.Id == command.Id, ct);
+        public async Task<ErrorOr<Success>> Handle(Command command, CancellationToken ct)
+        {
+            var brand = await db.Brands.FirstOrDefaultAsync(b => b.Id == command.Id, ct);
 
-        if (brand is null)
-            return Error.NotFound(
-                "Brand.NotFound",
-                $"Brand with ID '{command.Id}' was not found.");
+            if (brand is null)
+                return Error.NotFound(
+                    "Brand.NotFound",
+                    $"Brand with ID '{command.Id}' was not found.");
 
-        brand.IsActive = !brand.IsActive;
+            brand.IsActive = !brand.IsActive;
 
-        await db.SaveChangesAsync(ct);
+            await db.SaveChangesAsync(ct);
 
-        return Result.Success;
+            return Result.Success;
+        }
     }
 }
 
@@ -38,7 +41,7 @@ public static class ToggleBrandStatusEndpoint
                 ISender sender,
                 CancellationToken ct) =>
             {
-                var command = new ToggleBrandStatusCommand(id);
+                var command = new ToggleBrandStatus.Command(id);
 
                 var result = await sender.Send(command, ct);
 
