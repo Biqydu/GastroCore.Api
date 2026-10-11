@@ -3,7 +3,6 @@ using ErrorOrAspNetCoreExtensions;
 using FluentValidation;
 using GastroCore.Api.Data;
 using GastroCore.Api.Data.Entities;
-using GastroCore.Api.Features.Ingredients;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -64,7 +63,7 @@ public static class UpdateBrandEndpoint
             .RequireAuthorization(policy => policy.RequireRole(
                 nameof(UserRole.Manager)
             ))
-            .Produces<UpdateIngredientResponse>()
+            .Produces<UpdateBrand.Response>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem(StatusCodes.Status422UnprocessableEntity);
 
