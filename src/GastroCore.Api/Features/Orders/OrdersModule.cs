@@ -6,7 +6,8 @@ public static class OrdersModule
     {
         app.MapGroup("/orders")
             .WithTags("Orders")
-            .MapPlaceOrder();
+            .MapPlaceOrder()
+            .MapGetActiveOrders();
 
         return app;
     }
