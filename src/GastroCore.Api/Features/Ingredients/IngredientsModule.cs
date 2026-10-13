@@ -9,7 +9,8 @@ public static class IngredientsModule
             .MapCreateIngredient()
             .MapGetIngredient()
             .MapGetIngredients()
-            .MapUpdateIngredient();
+            .MapUpdateIngredient()
+            .MapGetWarehouseAlerts();
 
         return app;
     }
