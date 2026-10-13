@@ -26,15 +26,18 @@ public static class Seed
         string name = "Ingredient",
         decimal stockQuantity = 100m,
         decimal minStockThreshold = 10m,
-        Guid? createdBy = null) => new()
+        Guid? createdBy = null)
     {
-        Id = Guid.NewGuid(),
-        Name = name,
-        StockQuantity = stockQuantity,
-        UnitCost = unitCost,
-        MinStockThreshold = minStockThreshold,
-        CreatedBy = createdBy ?? DefaultCreatorId
-    };
+        return new Ingredient
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            StockQuantity = stockQuantity,
+            UnitCost = unitCost,
+            MinStockThreshold = minStockThreshold,
+            CreatedBy = createdBy ?? DefaultCreatorId
+        };
+    }
 
     public static Recipe CreateRecipe(
         Guid brandId,

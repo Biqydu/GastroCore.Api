@@ -42,8 +42,8 @@ public sealed class PlaceOrderHandlerTests(TestWebAppFactory factory) : Integrat
         result.Value.OrderItems.ShouldContain(i =>
             i.RecipeId == cake.Id && i.Quantity == 1 && i.UnitPrice == 10m);
     }
-    
-       [Fact]
+
+    [Fact]
     public async Task Handle_ValidCommand_PersistsOrderWithItems()
     {
         var brand = Seed.CreateBrand();
@@ -111,7 +111,7 @@ public sealed class PlaceOrderHandlerTests(TestWebAppFactory factory) : Integrat
             "EXT-4",
             [
                 new PlaceOrder.OrderItemRequestDto(bread.Id, 2), // flour: 4
-                new PlaceOrder.OrderItemRequestDto(cake.Id, 3)   // flour: 9, sugar: 3
+                new PlaceOrder.OrderItemRequestDto(cake.Id, 3) // flour: 9, sugar: 3
             ]));
 
         result.IsError.ShouldBeFalse();
@@ -257,7 +257,7 @@ public sealed class PlaceOrderHandlerTests(TestWebAppFactory factory) : Integrat
     public async Task Handle_RecipeFromInactiveBrand_ReturnsConflictAndChangesNothing()
     {
         var activeBrand = Seed.CreateBrand("Active");
-        var inactiveBrand = Seed.CreateBrand("Inactive", isActive: false);
+        var inactiveBrand = Seed.CreateBrand("Inactive", false);
         var flour = Seed.CreateIngredient(stockQuantity: 100m);
         var activeRecipe = Seed.CreateRecipe(activeBrand.Id, 6m, "A", items: (flour, 1m));
         var inactiveRecipe = Seed.CreateRecipe(inactiveBrand.Id, 6m, "B", items: (flour, 1m));

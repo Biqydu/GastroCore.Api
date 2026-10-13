@@ -13,7 +13,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Property(o => o.Source)
             .HasConversion<string>();
-        
+
         builder.HasIndex(o => new { o.Source, o.ExternalOrderId })
             .IsUnique();
     }

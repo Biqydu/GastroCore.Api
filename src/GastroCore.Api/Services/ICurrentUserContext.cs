@@ -6,7 +6,7 @@ public interface ICurrentUserContext
 {
     Guid Id { get; }
     bool IsAuthenticated { get; }
-    bool IsInRole(UserRole role);
-    
+
     bool IsChefOnly { get; }
+    bool IsInRole(UserRole role);
 }

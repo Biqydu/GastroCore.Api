@@ -11,10 +11,7 @@ public sealed class ValidationExceptionHandler(IProblemDetailsService problemDet
         Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is not ValidationException valEx)
-        {
-            return false;
-        }
+        if (exception is not ValidationException valEx) return false;
 
         var errors = valEx.Errors
             .GroupBy(x => x.PropertyName)

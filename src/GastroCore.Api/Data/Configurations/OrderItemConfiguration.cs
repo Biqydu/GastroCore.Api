@@ -9,7 +9,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
         builder.ToTable("OrderItems");
-        
+
         builder.HasOne(oi => oi.Order)
             .WithMany(o => o.OrderItems)
             .HasForeignKey(oi => oi.OrderId)

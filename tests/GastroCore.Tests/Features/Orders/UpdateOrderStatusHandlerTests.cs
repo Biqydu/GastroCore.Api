@@ -98,9 +98,11 @@ public sealed class UpdateOrderStatusHandlerTests(TestWebAppFactory factory) : I
         return order;
     }
 
-    private Task<OrderStatus> GetStatusAsync(Guid orderId) =>
-        QueryDb(db => db.Orders
+    private Task<OrderStatus> GetStatusAsync(Guid orderId)
+    {
+        return QueryDb(db => db.Orders
             .Where(o => o.Id == orderId)
             .Select(o => o.Status)
             .SingleAsync());
+    }
 }

@@ -36,7 +36,7 @@ public static class GetActiveOrders
             var totalRecords = await dbQuery.CountAsync(ct);
 
             var isChefOnly = userContext.IsChefOnly;
-            
+
             var orders = await dbQuery
                 .OrderBy(o => o.Status)
                 .ThenBy(o => o.CreatedAt)

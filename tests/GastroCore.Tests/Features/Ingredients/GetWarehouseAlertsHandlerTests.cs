@@ -29,7 +29,7 @@ public sealed class GetWarehouseAlertsHandlerTests(TestWebAppFactory factory) : 
         var result = await Send(new GetWarehouseAlerts.Query(1, 10));
 
         result.TotalRecords.ShouldBe(2);
-        result.Data.Select(i => i.Name).ShouldBe(["Below", "Equal"], ignoreOrder: true);
+        result.Data.Select(i => i.Name).ShouldBe(["Below", "Equal"], true);
         result.Data.ShouldNotContain(i => i.Name == "Above");
     }
 
@@ -37,7 +37,7 @@ public sealed class GetWarehouseAlertsHandlerTests(TestWebAppFactory factory) : 
     public async Task Handle_MapsAllFieldsToDto()
     {
         var ingredient = Seed.CreateIngredient(
-            unitCost: 2.5m, name: "Flour", stockQuantity: 3m, minStockThreshold: 10m);
+            2.5m, "Flour", 3m, 10m);
 
         await SeedAsync(ingredient);
 
@@ -128,10 +128,12 @@ public sealed class GetWarehouseAlertsHandlerTests(TestWebAppFactory factory) : 
         result.PageSize.ShouldBe(expected);
     }
 
-    private Task SeedAsync(params Ingredient[] ingredients) =>
-        ExecuteDb(async db =>
+    private Task SeedAsync(params Ingredient[] ingredients)
+    {
+        return ExecuteDb(async db =>
         {
             db.Ingredients.AddRange(ingredients);
             await db.SaveChangesAsync();
         });
+    }
 }
