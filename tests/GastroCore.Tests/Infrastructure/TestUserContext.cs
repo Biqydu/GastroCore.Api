@@ -16,6 +16,10 @@ public sealed class TestUserContext : ICurrentUserContext
         return _roles.Contains(role);
     }
 
+    public UserRole GetRole() => _roles.Count == 0
+        ? throw new InvalidOperationException("User role claim is missing or invalid.")
+        : _roles.First();
+
     public bool IsChefOnly => IsInRole(UserRole.Chef) && !IsInRole(UserRole.Manager);
 
     public TestUserContext WithRoles(params UserRole[] roles)

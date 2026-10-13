@@ -9,4 +9,5 @@ public interface ICurrentUserContext
 
     bool IsChefOnly { get; }
     bool IsInRole(UserRole role);
+    UserRole GetRole();
 }

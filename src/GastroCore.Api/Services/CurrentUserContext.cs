@@ -27,5 +27,14 @@ public sealed class CurrentUserContext(IHttpContextAccessor httpContextAccessor)
         return HttpContext?.User.IsInRole(role.ToString()) ?? false;
     }
 
+    public UserRole GetRole()
+    {
+        var role = HttpContext?.User.FindFirstValue(ClaimTypes.Role);
+
+        return !Enum.TryParse<UserRole>(role, out var result)
+            ? throw new InvalidOperationException("User role claim is missing or invalid.")
+            : result;
+    }
+
     public bool IsChefOnly => IsInRole(UserRole.Chef) && !IsInRole(UserRole.Manager);
 }
