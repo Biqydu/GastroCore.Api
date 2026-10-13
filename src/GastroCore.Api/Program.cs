@@ -58,7 +58,19 @@ app.UseStatusCodePages();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference(opts => { opts.Theme = ScalarTheme.DeepSpace; });
+    app.MapScalarApiReference(opts =>
+    {
+        opts.Theme = ScalarTheme.DeepSpace;
+        opts.WithCustomCss("""
+
+                                   @import url('https://googleapis.com');
+
+                                   :root {
+                                       --scalar-font: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+                                   }
+                               
+                           """);
+    });
 }
 
 using (var scope = app.Services.CreateScope())
