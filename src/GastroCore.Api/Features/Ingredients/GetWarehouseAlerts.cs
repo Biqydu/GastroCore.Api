@@ -72,7 +72,7 @@ public static class GetWarehouseAlertsEndpoint
 
                 return result;
             })
-            .WithName("Get Warehouse Alerts")
+            .WithName("GetWarehouseAlerts")
             .WithSummary("Gets all warehouse alerts.")
             .RequireAuthorization(policy => policy.RequireRole(
                 nameof(UserRole.Manager)
