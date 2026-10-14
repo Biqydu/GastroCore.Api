@@ -43,6 +43,7 @@ public static class Seed
         Guid brandId,
         decimal ingredientsTotalPrice,
         string name = "Recipe",
+        decimal? basePrice = null,
         Guid? createdBy = null,
         params (Ingredient Ingredient, decimal Amount)[] items)
     {
@@ -51,6 +52,7 @@ public static class Seed
             Name = name,
             BrandId = brandId,
             IngredientsTotalPrice = ingredientsTotalPrice,
+            BasePrice = basePrice ?? ingredientsTotalPrice,
             CreatedBy = createdBy ?? DefaultCreatorId,
             RecipeIngredients = items.Select(i => new RecipeIngredient
             {
