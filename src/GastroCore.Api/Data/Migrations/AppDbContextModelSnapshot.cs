@@ -247,6 +247,9 @@ namespace GastroCore.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("BasePrice")
+                        .HasColumnType("numeric");
+
                     b.Property<Guid>("BrandId")
                         .HasColumnType("uuid");
 
