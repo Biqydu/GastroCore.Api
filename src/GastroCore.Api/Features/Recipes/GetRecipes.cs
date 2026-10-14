@@ -17,6 +17,7 @@ public static class GetRecipes
         Guid BrandId,
         string BrandName,
         decimal? IngredientsTotalPrice,
+        decimal? BasePrice,
         bool? IsActive);
 
     public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
@@ -41,7 +42,7 @@ public static class GetRecipes
                 .ThenByDescending(r => r.Id)
                 .ApplyPagination(pageNumber, pageSize)
                 .Select(r => new Dto(r.Id, r.Name, r.Brand.Id, r.Brand.Name,
-                    isChefOnly ? null : r.IngredientsTotalPrice,
+                    isChefOnly ? null : r.IngredientsTotalPrice, isChefOnly ? null : r.BasePrice,
                     isChefOnly ? null : r.Brand.IsActive))
                 .ToArrayAsync(ct);
 

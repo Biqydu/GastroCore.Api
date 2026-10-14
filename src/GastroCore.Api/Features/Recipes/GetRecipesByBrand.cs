@@ -17,7 +17,8 @@ public static class GetRecipesByBrand
     public sealed record Dto(
         Guid Id,
         string Name,
-        decimal? IngredientsTotalPrice);
+        decimal? IngredientsTotalPrice,
+        decimal? BasePrice);
 
     public sealed class Handler(AppDbContext db, ICurrentUserContext userContext)
         : IRequestHandler<Query, ErrorOr<PagedResponse<Dto>>>
@@ -50,7 +51,8 @@ public static class GetRecipesByBrand
                 .OrderByDescending(r => r.CreatedAt)
                 .ThenByDescending(r => r.Id)
                 .ApplyPagination(pageNumber, pageSize)
-                .Select(r => new Dto(r.Id, r.Name, isChefOnly ? null : r.IngredientsTotalPrice))
+                .Select(r => new Dto(r.Id, r.Name, isChefOnly ? null : r.IngredientsTotalPrice,
+                    isChefOnly ? null : r.BasePrice))
                 .ToArrayAsync(ct);
 
             return new PagedResponse<Dto>
