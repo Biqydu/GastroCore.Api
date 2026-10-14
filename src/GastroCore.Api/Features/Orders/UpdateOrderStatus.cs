@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using ErrorOr;
 using ErrorOrAspNetCoreExtensions;
 using FluentValidation;
@@ -22,13 +23,21 @@ public static class UpdateOrderStatus
                 .NotEmpty().WithMessage("OrderId is required.");
 
             RuleFor(x => x.NewStatus)
-                .Must(x => x is OrderStatus.Completed or OrderStatus.Cancelled)
-                .WithMessage("Order status must be Completed or Cancelled.");
+                .IsInEnum().WithMessage("NewStatus is invalid.");
         }
     }
 
     public sealed class Handler(AppDbContext db) : IRequestHandler<Command, ErrorOr<Success>>
     {
+        private static readonly ReadOnlyDictionary<OrderStatus, OrderStatus[]> AllowedTransitions =
+            new Dictionary<OrderStatus, OrderStatus[]>
+            {
+                [OrderStatus.Pending] = [OrderStatus.InPreparation, OrderStatus.Cancelled],
+                [OrderStatus.InPreparation] = [OrderStatus.Completed, OrderStatus.Cancelled],
+                [OrderStatus.Completed] = [],
+                [OrderStatus.Cancelled] = []
+            }.AsReadOnly();
+        
         public async Task<ErrorOr<Success>> Handle(Command command, CancellationToken ct)
         {
             var order = await db.Orders
@@ -39,17 +48,13 @@ public static class UpdateOrderStatus
                     "Order.NotFound",
                     $"Order with ID {command.OrderId} was not found.");
 
-            if (command.NewStatus == OrderStatus.Completed &&
-                order.Status != OrderStatus.InPreparation)
+            var isAllowed = AllowedTransitions.TryGetValue(order.Status, out var allowed)
+                            && allowed.Contains(command.NewStatus);
+            
+            if (!isAllowed)
                 return Error.Conflict(
                     "Order.InvalidStatus",
-                    "Only orders in preparation can be completed.");
-
-            if (command.NewStatus == OrderStatus.Cancelled &&
-                order.Status is not (OrderStatus.Pending or OrderStatus.InPreparation))
-                return Error.Conflict(
-                    "Order.InvalidStatus",
-                    "Only pending or in-preparation orders can be cancelled.");
+                    $"Cannot change order status from {order.Status} to {command.NewStatus}.");
 
             order.Status = command.NewStatus;
 
