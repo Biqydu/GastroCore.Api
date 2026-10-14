@@ -13,6 +13,7 @@ public sealed class UpdateOrderStatusHandlerTests(TestWebAppFactory factory) : I
     private const OrderSource Source = OrderSource.Internal;
 
     [Theory]
+    [InlineData(OrderStatus.Pending, OrderStatus.InPreparation)]
     [InlineData(OrderStatus.InPreparation, OrderStatus.Completed)]
     [InlineData(OrderStatus.Pending, OrderStatus.Cancelled)]
     [InlineData(OrderStatus.InPreparation, OrderStatus.Cancelled)]
@@ -27,26 +28,19 @@ public sealed class UpdateOrderStatusHandlerTests(TestWebAppFactory factory) : I
     }
 
     [Theory]
+    [InlineData(OrderStatus.Pending, OrderStatus.Pending)]
     [InlineData(OrderStatus.Pending, OrderStatus.Completed)]
+    [InlineData(OrderStatus.InPreparation, OrderStatus.Pending)]
+    [InlineData(OrderStatus.InPreparation, OrderStatus.InPreparation)]
+    [InlineData(OrderStatus.Completed, OrderStatus.Pending)]
+    [InlineData(OrderStatus.Completed, OrderStatus.InPreparation)]
     [InlineData(OrderStatus.Completed, OrderStatus.Completed)]
-    [InlineData(OrderStatus.Cancelled, OrderStatus.Completed)]
-    public async Task Handle_CompleteFromInvalidStatus_ReturnsConflictAndKeepsStatus(
-        OrderStatus current, OrderStatus next)
-    {
-        var order = await SeedOrderAsync(current);
-
-        var result = await Send(new UpdateOrderStatus.Command(order.Id, next));
-
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
-        result.FirstError.Code.ShouldBe("Order.InvalidStatus");
-        (await GetStatusAsync(order.Id)).ShouldBe(current);
-    }
-
-    [Theory]
     [InlineData(OrderStatus.Completed, OrderStatus.Cancelled)]
+    [InlineData(OrderStatus.Cancelled, OrderStatus.Pending)]
+    [InlineData(OrderStatus.Cancelled, OrderStatus.InPreparation)]
+    [InlineData(OrderStatus.Cancelled, OrderStatus.Completed)]
     [InlineData(OrderStatus.Cancelled, OrderStatus.Cancelled)]
-    public async Task Handle_CancelFromInvalidStatus_ReturnsConflictAndKeepsStatus(
+    public async Task Handle_DisallowedTransition_ReturnsConflictAndKeepsStatus(
         OrderStatus current, OrderStatus next)
     {
         var order = await SeedOrderAsync(current);
@@ -75,14 +69,27 @@ public sealed class UpdateOrderStatusHandlerTests(TestWebAppFactory factory) : I
     [Fact]
     public async Task Handle_UpdatesOnlyTargetOrder()
     {
-        var target = await SeedOrderAsync(OrderStatus.InPreparation, "EXT-A");
-        var other = await SeedOrderAsync(OrderStatus.InPreparation, "EXT-B");
+        var target = await SeedOrderAsync(OrderStatus.Pending, "EXT-A");
+        var other = await SeedOrderAsync(OrderStatus.Pending, "EXT-B");
 
-        var result = await Send(new UpdateOrderStatus.Command(target.Id, OrderStatus.Completed));
+        var result = await Send(new UpdateOrderStatus.Command(target.Id, OrderStatus.InPreparation));
 
         result.IsError.ShouldBeFalse();
-        (await GetStatusAsync(target.Id)).ShouldBe(OrderStatus.Completed);
-        (await GetStatusAsync(other.Id)).ShouldBe(OrderStatus.InPreparation);
+        (await GetStatusAsync(target.Id)).ShouldBe(OrderStatus.InPreparation);
+        (await GetStatusAsync(other.Id)).ShouldBe(OrderStatus.Pending);
+    }
+
+    [Fact]
+    public async Task Handle_FullLifecycle_PendingToInPreparationToCompleted()
+    {
+        var order = await SeedOrderAsync(OrderStatus.Pending);
+
+        (await Send(new UpdateOrderStatus.Command(order.Id, OrderStatus.InPreparation)))
+            .IsError.ShouldBeFalse();
+        (await Send(new UpdateOrderStatus.Command(order.Id, OrderStatus.Completed)))
+            .IsError.ShouldBeFalse();
+
+        (await GetStatusAsync(order.Id)).ShouldBe(OrderStatus.Completed);
     }
 
     private async Task<Order> SeedOrderAsync(OrderStatus status, string externalId = "EXT-1")
