@@ -81,7 +81,7 @@ public static class PlaceOrder
                 .Select(r => new
                 {
                     r.Id,
-                    r.IngredientsTotalPrice,
+                    r.BasePrice,
                     IsBrandActive = r.Brand.IsActive,
                     Ingredients = r.RecipeIngredients.Select(ri => new
                     {
@@ -137,7 +137,7 @@ public static class PlaceOrder
                      """);
 
             var totalPrice = command.Items.Sum(item =>
-                recipesById[item.RecipeId].IngredientsTotalPrice * item.Quantity);
+                recipesById[item.RecipeId].BasePrice * item.Quantity);
 
             var order = new Order
             {
@@ -155,7 +155,7 @@ public static class PlaceOrder
                     OrderId = order.Id,
                     RecipeId = item.RecipeId,
                     Quantity = item.Quantity,
-                    UnitPrice = recipe.IngredientsTotalPrice
+                    UnitPrice = recipe.BasePrice
                 });
             }
 

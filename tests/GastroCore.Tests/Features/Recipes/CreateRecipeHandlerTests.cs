@@ -25,6 +25,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         var result = await Send(new CreateRecipe.Command(
             "Cake",
             brand.Id,
+            20m,
             [
                 new CreateRecipe.IngredientDto(flour.Id, 2m), // 2 * 3 = 6
                 new CreateRecipe.IngredientDto(sugar.Id, 0.5m) // 0.5 * 5 = 2.5
@@ -34,6 +35,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         result.Value.Name.ShouldBe("Cake");
         result.Value.BrandId.ShouldBe(brand.Id);
         result.Value.IngredientsTotalPrice.ShouldBe(8.5m);
+        result.Value.BasePrice.ShouldBe(20m);
     }
 
     [Fact]
@@ -52,6 +54,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         var result = await Send(new CreateRecipe.Command(
             "Bread",
             brand.Id,
+            25m,
             [new CreateRecipe.IngredientDto(flour.Id, 4m)]));
 
         result.IsError.ShouldBeFalse();
@@ -63,12 +66,13 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         saved.Name.ShouldBe("Bread");
         saved.BrandId.ShouldBe(brand.Id);
         saved.IngredientsTotalPrice.ShouldBe(12m);
+        saved.BasePrice.ShouldBe(25m);
         saved.CreatedBy.ShouldBe(Factory.CurrentUser.Id);
         saved.RecipeIngredients.Count.ShouldBe(1);
         saved.RecipeIngredients.Single().IngredientId.ShouldBe(flour.Id);
         saved.RecipeIngredients.Single().AmountRequired.ShouldBe(4m);
     }
-
+    
     [Fact]
     public async Task Handle_BrandNotFound_ReturnsNotFoundAndSavesNothing()
     {
@@ -83,6 +87,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         var result = await Send(new CreateRecipe.Command(
             "Ghost recipe",
             Guid.NewGuid(),
+            10m,
             [new CreateRecipe.IngredientDto(flour.Id, 1m)]));
 
         result.IsError.ShouldBeTrue();
@@ -108,9 +113,10 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         var result = await Send(new CreateRecipe.Command(
             "Broken recipe",
             brand.Id,
+            10m,
             [
                 new CreateRecipe.IngredientDto(flour.Id, 1m),
-                new CreateRecipe.IngredientDto(Guid.NewGuid(), 1m) // nie istnieje
+                new CreateRecipe.IngredientDto(Guid.NewGuid(), 1m) 
             ]));
 
         result.IsError.ShouldBeTrue();
@@ -137,6 +143,7 @@ public sealed class CreateRecipeHandlerTests(TestWebAppFactory factory) : Integr
         var result = await Send(new CreateRecipe.Command(
             "Dough",
             brand.Id,
+            15m,
             [
                 new CreateRecipe.IngredientDto(water.Id, 10m),
                 new CreateRecipe.IngredientDto(flour.Id, 2m)

@@ -20,6 +20,7 @@ public static class GetRecipeById
         Guid BrandId,
         string BrandName,
         decimal? IngredientsTotalPrice,
+        decimal? BasePrice,
         bool? IsActive,
         IReadOnlyList<IngredientDetailsDto> Ingredients);
 
@@ -43,6 +44,7 @@ public static class GetRecipeById
                     r.BrandId,
                     r.Brand.Name,
                     isChefOnly ? null : r.IngredientsTotalPrice,
+                    isChefOnly ? null : r.BasePrice,
                     isChefOnly ? null : r.Brand.IsActive,
                     r.RecipeIngredients
                         .OrderBy(ri => ri.Ingredient.Name)
