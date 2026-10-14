@@ -16,6 +16,7 @@ public static class CreateRecipe
     public sealed record Request(
         string Name,
         Guid BrandId,
+        decimal BasePrice,
         IReadOnlyList<IngredientDto> Ingredients);
 
     public sealed record IngredientDto(Guid Id, decimal AmountRequired);
@@ -23,6 +24,7 @@ public static class CreateRecipe
     public sealed record Command(
         string Name,
         Guid BrandId,
+        decimal BasePrice,
         IReadOnlyList<IngredientDto> Ingredients) : IRequest<ErrorOr<Response>>;
 
     public sealed record Response(
@@ -30,6 +32,7 @@ public static class CreateRecipe
         string Name,
         Guid BrandId,
         decimal IngredientsTotalPrice,
+        decimal BasePrice,
         IReadOnlyList<IngredientDto> Ingredients);
 
     public sealed class RecipeValidator : AbstractValidator<Command>
@@ -42,6 +45,10 @@ public static class CreateRecipe
 
             RuleFor(r => r.BrandId)
                 .NotEmpty().WithMessage("BrandId is required.");
+            
+            RuleFor(r => r.BasePrice)
+                .NotEmpty().WithMessage("BasePrice is required.")
+                .GreaterThan(0).WithMessage("BasePrice must be greater than zero.");
 
             RuleFor(r => r.Ingredients)
                 .NotNull().WithMessage("Ingredients collection cannot be null.")
@@ -106,6 +113,7 @@ public static class CreateRecipe
                 Name = command.Name,
                 BrandId = command.BrandId,
                 IngredientsTotalPrice = costResult.Value,
+                BasePrice = command.BasePrice,
                 CreatedBy = userContext.Id,
                 RecipeIngredients = command.Ingredients.Select(i => new RecipeIngredient
                 {
@@ -122,6 +130,7 @@ public static class CreateRecipe
                 recipe.Name,
                 recipe.BrandId,
                 recipe.IngredientsTotalPrice,
+                recipe.BasePrice,
                 command.Ingredients);
         }
     }
@@ -133,7 +142,8 @@ public static class CreateRecipeEndpoint
     {
         app.MapPost("/", async (CreateRecipe.Request request, ISender sender, CancellationToken ct) =>
             {
-                var command = new CreateRecipe.Command(request.Name, request.BrandId, request.Ingredients);
+                var command = new CreateRecipe.Command(request.Name, request.BrandId, request.BasePrice,
+                    request.Ingredients);
 
                 var result = await sender.Send(command, ct);
 
