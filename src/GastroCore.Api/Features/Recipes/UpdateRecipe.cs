@@ -12,11 +12,11 @@ namespace GastroCore.Api.Features.Recipes;
 
 public static class UpdateRecipe
 {
-    public sealed record Request(string Name, IReadOnlyList<IngredientDto> Ingredients);
+    public sealed record Request(string Name, decimal BasePrice, IReadOnlyList<IngredientDto> Ingredients);
 
     public sealed record IngredientDto(Guid Id, decimal AmountRequired);
 
-    public sealed record Command(Guid RecipeId, string Name, IReadOnlyList<IngredientDto> Ingredients)
+    public sealed record Command(Guid RecipeId, string Name, decimal BasePrice, IReadOnlyList<IngredientDto> Ingredients)
         : IRequest<ErrorOr<Response>>;
 
     public sealed record Response(
@@ -33,6 +33,10 @@ public static class UpdateRecipe
             RuleFor(r => r.Name)
                 .NotEmpty().WithMessage("Name is required.")
                 .MaximumLength(500).WithMessage("Name must not exceed 500 characters.");
+            
+            RuleFor(r => r.BasePrice)
+                .NotEmpty().WithMessage("BasePrice is required.")
+                .GreaterThan(0).WithMessage("BasePrice must be greater than zero.");
 
             RuleFor(r => r.Ingredients)
                 .NotNull().WithMessage("Ingredients collection cannot be null.")
@@ -92,6 +96,7 @@ public static class UpdateRecipe
                 return costResult.Errors;
 
             recipe.Name = command.Name;
+            recipe.BasePrice = command.BasePrice;
             recipe.IngredientsTotalPrice = costResult.Value;
 
             recipe.RecipeIngredients.Clear();
@@ -121,7 +126,7 @@ public static class UpdateRecipeEndpoint
     {
         app.MapPut("/{id:guid}", async (Guid id, UpdateRecipe.Request request, ISender sender, CancellationToken ct) =>
             {
-                var command = new UpdateRecipe.Command(id, request.Name, request.Ingredients);
+                var command = new UpdateRecipe.Command(id, request.Name, request.BasePrice, request.Ingredients);
 
                 var result = await sender.Send(command, ct);
 
